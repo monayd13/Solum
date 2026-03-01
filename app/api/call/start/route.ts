@@ -68,6 +68,15 @@ export async function POST(req: NextRequest) {
       customInstructions: userAgent.custom_instructions,
     });
 
+    // DEBUG: Log per-user context being sent to ElevenLabs
+    console.log("[CallStart] user:", user.id);
+    console.log("[CallStart] profile (raw):", JSON.stringify(profile));
+    console.log("[CallStart] agent:", agentId, "template:", template.name);
+    console.log("[CallStart] memoriesCount:", (memories ?? []).length);
+    console.log("[CallStart] memories:", JSON.stringify((memories ?? []).map((m: Memory) => m.content)));
+    console.log("[CallStart] conversationCount:", conversationCount);
+    console.log("[CallStart] dynamicVariables:", JSON.stringify(dynamicVariables, null, 2));
+
     // Create conversation record (ElevenLabs conversation ID linked later via /api/call/link)
     const { data: conversation } = await supabase
       .from("conversations")

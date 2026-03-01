@@ -3,7 +3,6 @@ export interface UserProfile {
   full_name: string | null;
   avatar_url: string | null;
   phone: string | null;
-  age: number | null;
   dob: string | null;
   gender: "female" | "male" | "non-binary" | "other" | null;
   created_at: string;

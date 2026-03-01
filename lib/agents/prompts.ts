@@ -27,8 +27,13 @@ export function buildDynamicVariables(params: BuildDynamicVarsParams): Record<st
   if (customInstructions) {
     contextParts.push(`Special instructions: ${customInstructions}`);
   }
-  if (userProfile.age) {
-    contextParts.push(`Age: ${userProfile.age}`);
+  if (userProfile.dob) {
+    const birth = new Date(userProfile.dob);
+    const today = new Date();
+    let age = today.getFullYear() - birth.getFullYear();
+    const m = today.getMonth() - birth.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) age--;
+    contextParts.push(`Age: ${age}`);
   }
   if (userProfile.gender) {
     contextParts.push(`Gender: ${userProfile.gender}`);

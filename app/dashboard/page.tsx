@@ -6,7 +6,7 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import { MoodCheckIn } from "@/components/dashboard/MoodCheckIn";
 import { MemoryCorner } from "@/components/dashboard/MemoryCorner";
 import { UserAgent, UserProfile, AgentTemplate } from "@/types";
-import { LogOut, Phone, Plus, ChevronDown, ChevronUp, Sparkles, Clock, MessageSquare } from "lucide-react";
+import { LogOut, Phone, Plus, ChevronDown, ChevronUp, Sparkles, Clock, MessageSquare, Settings } from "lucide-react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 
@@ -313,6 +313,15 @@ export default function DashboardPage() {
         <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
           <span style={{ fontSize: "13px", color: "var(--muted)" }}>{profile?.full_name ?? ""}</span>
           <ThemeToggle />
+          <Link href="/dashboard/settings" title="Profile settings" style={{
+            width: "34px", height: "34px", borderRadius: "50%",
+            background: "var(--surface2)", border: "1px solid var(--border2)",
+            color: "var(--muted)", cursor: "pointer",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            textDecoration: "none",
+          }}>
+            <Settings size={14} />
+          </Link>
           <button onClick={handleLogout} title="Sign out" style={{
             width: "34px", height: "34px", borderRadius: "50%",
             background: "var(--surface2)", border: "1px solid var(--border2)",
@@ -378,9 +387,16 @@ export default function DashboardPage() {
                         {profile.gender.charAt(0).toUpperCase() + profile.gender.slice(1)}
                       </span>
                     )}
-                    {profile?.age && (
+                    {profile?.dob && (
                       <span style={{ fontSize: "12px", color: "var(--muted)" }}>
-                        Age {profile.age}
+                        Age {(() => {
+                          const birth = new Date(profile.dob!);
+                          const today = new Date();
+                          let age = today.getFullYear() - birth.getFullYear();
+                          const m = today.getMonth() - birth.getMonth();
+                          if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) age--;
+                          return age;
+                        })()}
                       </span>
                     )}
                     {memberSince && (

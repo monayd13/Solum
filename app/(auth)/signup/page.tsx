@@ -111,14 +111,21 @@ export default function SignupPage() {
     }
 
     if (data.user) {
-      await supabase.from("profiles").upsert({
+      const { error: profileError } = await supabase.from("profiles").upsert({
         id: data.user.id,
         full_name: fullName,
         phone: phone || null,
-        age,
         dob: dob || null,
         gender: gender || null,
       });
+
+      if (profileError) {
+        console.error("[Signup] Profile save failed:", profileError.message);
+        setError("Account created but profile save failed. You can update your profile later.");
+        setLoading(false);
+        return;
+      }
+      console.log("[Signup] Profile saved for user:", data.user.id, { fullName, gender, dob, phone });
     }
 
     if (data.session) {
