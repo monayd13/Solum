@@ -1,8 +1,30 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/server";
 import Anthropic from "@anthropic-ai/sdk";
+import crypto from "crypto";
 
-const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+const anthropic = process.env.ANTHROPIC_API_KEY
+  ? new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
+  : null;
+
+const WEBHOOK_SECRET = process.env.ELEVENLABS_WEBHOOK_SECRET;
+
+function verifyHmacSignature(payload: string, signatureHeader: string | null, secret: string): boolean {
+  if (!signatureHeader) return false;
+  // ElevenLabs signature format: "t=<timestamp>,v0=<hash>"
+  const parts = Object.fromEntries(
+    signatureHeader.split(",").map((p) => {
+      const [k, ...v] = p.split("=");
+      return [k, v.join("=")];
+    })
+  );
+  const timestamp = parts["t"];
+  const expectedSig = parts["v0"];
+  if (!timestamp || !expectedSig) return false;
+  const signedPayload = `${timestamp}.${payload}`;
+  const computed = crypto.createHmac("sha256", secret).update(signedPayload).digest("hex");
+  return crypto.timingSafeEqual(Buffer.from(computed), Buffer.from(expectedSig));
+}
 
 export async function GET() {
   return NextResponse.json({
@@ -15,35 +37,42 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   try {
-    const body = await req.json();
+    const rawBody = await req.text();
 
-    // ElevenLabs wraps everything in body.data for post_call_transcription events
-    const payload = body.data ?? body;
-
-    const conversation_id = payload.conversation_id;
-    const agent_id = payload.agent_id;
-    const transcript = payload.transcript;
-    const call_duration_seconds =
-      payload.call_duration_secs ??
-      payload.call_duration_seconds ??
-      payload.metadata?.call_duration_secs ??
-      null;
-
-    console.log("📝 Post-call webhook received:", {
-      type: body.type,
-      conversation_id,
-      agent_id,
-      duration: call_duration_seconds,
-    });
-
-    // Ignore non-transcription events (post_call_audio, call_initiation_failure)
-    if (body.type && body.type !== "post_call_transcription") {
-      console.log("Ignoring event type:", body.type);
-      return NextResponse.json({ received: true });
+    // HMAC signature validation (if secret is configured)
+    if (WEBHOOK_SECRET) {
+      const signature = req.headers.get("elevenlabs-signature");
+      if (!verifyHmacSignature(rawBody, signature, WEBHOOK_SECRET)) {
+        console.error("❌ HMAC validation failed");
+        return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
+      }
     }
 
+    const body = JSON.parse(rawBody);
+
+    // ElevenLabs wraps payload under { type, data, event_timestamp }
+    const eventType = body.type;
+    const data = body.data ?? body;
+
+    // Only process transcription webhooks
+    if (eventType && eventType !== "post_call_transcription") {
+      console.log(`⏭️ Ignoring webhook type: ${eventType}`);
+      return NextResponse.json({ success: true, message: `Ignored event type: ${eventType}` });
+    }
+
+    const conversation_id = data.conversation_id;
+    const agent_id = data.agent_id;
+    const transcript = data.transcript;
+    const call_duration_secs = data.metadata?.call_duration_secs;
+
+    console.log("📝 Post-call webhook received:", {
+      type: eventType,
+      conversation_id,
+      agent_id,
+      duration: call_duration_secs,
+    });
+
     if (!conversation_id) {
-      console.error("Missing conversation_id. Full payload:", JSON.stringify(body, null, 2));
       return NextResponse.json({ error: "Missing conversation_id" }, { status: 400 });
     }
 
@@ -63,27 +92,14 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // ElevenLabs transcript uses { role: "agent"|"user", message: "..." }
+    // ElevenLabs transcript uses 'message' field, not 'content'
     const transcriptText = Array.isArray(transcript)
-      ? transcript
-          .map((m: { role: string; message?: string; content?: string }) =>
-            `${m.role === "agent" ? "Assistant" : "User"}: ${m.message ?? m.content ?? ""}`
-          )
-          .join("\n")
+      ? transcript.map((m: { role: string; message?: string; content?: string }) => `${m.role}: ${m.message ?? m.content ?? ""}`).join("\n")
       : JSON.stringify(transcript);
-
-    // Convert to our DB format { role: "assistant"|"user", content: "..." }
-    const formattedTranscript = Array.isArray(transcript)
-      ? transcript.map((m: { role: string; message?: string; content?: string; time_in_call_secs?: number }) => ({
-          role: m.role === "agent" ? "assistant" : "user",
-          content: m.message ?? m.content ?? "",
-          timestamp: m.time_in_call_secs,
-        }))
-      : transcript;
 
     let memories: { content: string; category: string; importance: number }[] = [];
     
-    if (process.env.ANTHROPIC_API_KEY) {
+    if (anthropic) {
       try {
         const memoryResponse = await anthropic.messages.create({
           model: "claude-opus-4-5",
@@ -104,9 +120,8 @@ Only include facts that would be meaningful to remember for future conversations
       }
     }
 
-    // Use ElevenLabs summary if available, otherwise generate with Claude
-    let summary = payload.analysis?.transcript_summary ?? "";
-    if (!summary && process.env.ANTHROPIC_API_KEY) {
+    let summary = "";
+    if (anthropic) {
       try {
         const summaryResponse = await anthropic.messages.create({
           model: "claude-opus-4-5",
@@ -131,8 +146,8 @@ Only include facts that would be meaningful to remember for future conversations
       .from("conversations")
       .update({
         ended_at: new Date().toISOString(),
-        duration_seconds: call_duration_seconds ?? null,
-        transcript: formattedTranscript,
+        duration_seconds: call_duration_secs ?? null,
+        transcript,
         summary,
       })
       .eq("id", conversation.id);

@@ -16,6 +16,11 @@ if (!API_KEY) {
   process.exit(1);
 }
 
+const WEBHOOK_URL = process.env.WEBHOOK_URL; // e.g. https://<your-ngrok-or-prod-domain>/api/webhook/post-call
+if (!WEBHOOK_URL) {
+  console.warn("⚠️  WEBHOOK_URL not set — agents will be created without a post-call webhook.");
+}
+
 const API_URL = "https://api.elevenlabs.io/v1/convai/agents/create";
 const PROMPTS_DIR = path.resolve(__dirname, "../personalities/voice-prompts");
 
@@ -100,6 +105,13 @@ async function createAgent(agent: AgentDef): Promise<{ name: string; agentId: st
         variant: "compact",
         avatar: { type: "orb" },
       },
+      ...(WEBHOOK_URL
+        ? {
+            webhooks: {
+              post_call: { url: WEBHOOK_URL },
+            },
+          }
+        : {}),
     },
   };
 
