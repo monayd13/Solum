@@ -1,0 +1,924 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Solum · AI Companion That Calls, Listens & Remembers</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0d0b08;
+  --bg2: #131008;
+  --surface: #1a1610;
+  --surface2: #201c12;
+  --border: #2a2415;
+  --border2: #3d3520;
+  --text: #f0ead8;
+  --muted: #7a6e55;
+  --muted2: #4a4232;
+  --amber: #d4880a;
+  --amber-l: rgba(212,136,10,0.10);
+  --amber-m: rgba(212,136,10,0.25);
+  --teal: #2a9d8f;
+  --teal-l: rgba(42,157,143,0.10);
+  --teal-m: rgba(42,157,143,0.25);
+  --rose: #c9637a;
+  --rose-l: rgba(201,99,122,0.10);
+  --rose-m: rgba(201,99,122,0.25);
+  --green: #5a9e6a;
+  --green-l: rgba(90,158,106,0.10);
+  --green-m: rgba(90,158,106,0.25);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  background: var(--bg); color: var(--text);
+  font-family: 'DM Sans', sans-serif; font-size: 14px; line-height: 1.6; overflow-x: hidden;
+}
+.topnav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 1000;
+  background: rgba(13,11,8,0.85); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border); padding: 0 40px;
+  display: flex; align-items: center; justify-content: space-between; height: 56px; transition: all 0.3s;
+}
+.topnav.scrolled { background: rgba(13,11,8,0.95); box-shadow: 0 4px 30px rgba(0,0,0,0.3); }
+.nav-logo {
+  font-family: 'Cormorant Garamond', serif; font-size: 24px; font-weight: 600;
+  color: var(--amber); text-decoration: none; letter-spacing: 1px;
+}
+.nav-links { display: flex; gap: 32px; align-items: center; }
+.nav-links a {
+  color: var(--muted); text-decoration: none; font-size: 12px;
+  letter-spacing: 1px; text-transform: uppercase; transition: color 0.2s; font-weight: 500;
+}
+.nav-links a:hover { color: var(--amber); }
+.nav-cta {
+  padding: 8px 20px !important; background: var(--amber) !important;
+  color: var(--bg) !important; border-radius: 8px; font-weight: 600 !important; transition: all 0.2s !important;
+}
+.nav-cta:hover { background: #e8980f !important; transform: translateY(-1px); }
+.section { padding: 100px 40px; max-width: 1200px; margin: 0 auto; }
+.section-sm { max-width: 900px; }
+.sec-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: clamp(32px, 4vw, 48px); font-weight: 300; margin-bottom: 12px; text-align: center;
+}
+.sec-title em { font-style: italic; color: var(--amber); }
+.sec-sub { color: var(--muted); font-size: 14px; max-width: 500px; margin: 0 auto; text-align: center; }
+.divider {
+  display: flex; align-items: center; gap: 16px; max-width: 1200px; margin: 0 auto; padding: 0 40px;
+}
+.divider::before, .divider::after { content: ''; flex: 1; height: 1px; background: var(--border2); }
+.divider-label {
+  font-size: 10px; letter-spacing: 4px; text-transform: uppercase; color: var(--muted); white-space: nowrap;
+}
+.btn {
+  padding: 14px 28px; border-radius: 12px; font-size: 14px; font-weight: 600;
+  cursor: pointer; transition: all 0.2s; border: none; font-family: 'DM Sans';
+  text-decoration: none; display: inline-flex; align-items: center; gap: 8px;
+}
+.btn-primary { background: var(--amber); color: var(--bg); }
+.btn-primary:hover { background: #e8980f; transform: translateY(-2px); box-shadow: 0 8px 30px rgba(212,136,10,0.3); }
+.btn-ghost { background: var(--surface2); border: 1px solid var(--border2); color: var(--text); }
+.btn-ghost:hover { border-color: var(--amber-m); transform: translateY(-2px); }
+#hero {
+  min-height: 100vh; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; text-align: center;
+  padding: 120px 40px 80px; position: relative; overflow: hidden;
+}
+#hero::before {
+  content: ''; position: absolute; top: -100px; left: 50%; transform: translateX(-50%);
+  width: 900px; height: 500px;
+  background: radial-gradient(ellipse, rgba(212,136,10,0.08) 0%, transparent 70%); pointer-events: none;
+}
+.hero-badge {
+  display: inline-flex; align-items: center; gap: 8px; padding: 6px 16px; border-radius: 100px;
+  border: 1px solid var(--amber-m); background: var(--amber-l);
+  font-size: 11px; letter-spacing: 2px; text-transform: uppercase;
+  color: var(--amber); margin-bottom: 32px; animation: fadeUp 0.8s ease both;
+}
+.hero-badge-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--amber); animation: pulse 2s infinite; }
+.hero-title {
+  font-family: 'Cormorant Garamond', serif; font-size: clamp(48px, 7vw, 88px); font-weight: 300;
+  line-height: 1.05; letter-spacing: -3px; margin-bottom: 24px; animation: fadeUp 0.8s 0.1s ease both;
+}
+.hero-title em { font-style: italic; color: var(--amber); }
+.hero-sub {
+  color: var(--muted); font-size: 16px; max-width: 520px; margin: 0 auto 40px; line-height: 1.8;
+  animation: fadeUp 0.8s 0.2s ease both;
+}
+.hero-ctas { display: flex; gap: 12px; justify-content: center; animation: fadeUp 0.8s 0.3s ease both; }
+.hero-stats { display: flex; gap: 48px; margin-top: 60px; animation: fadeUp 0.8s 0.4s ease both; }
+.hero-stat-val {
+  font-family: 'Cormorant Garamond', serif; font-size: 36px; font-weight: 300;
+  color: var(--amber); line-height: 1; margin-bottom: 4px;
+}
+.hero-stat-label { font-size: 11px; color: var(--muted); letter-spacing: 1px; text-transform: uppercase; }
+.hero-scroll {
+  position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%);
+  color: var(--muted); font-size: 11px; letter-spacing: 2px; text-transform: uppercase;
+  animation: bounce 2s infinite; cursor: pointer; text-decoration: none;
+}
+.gate-box {
+  background: var(--surface); border: 1px solid var(--border2); border-radius: 24px; padding: 48px;
+  text-align: center; position: relative; overflow: hidden; max-width: 760px; margin: 0 auto;
+}
+.gate-box::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+  background: linear-gradient(90deg, transparent, var(--amber), transparent); opacity: 0.5;
+}
+.gate-label { font-size: 10px; letter-spacing: 3px; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; }
+.gate-url {
+  font-family: 'DM Mono', monospace; font-size: 14px; color: var(--amber);
+  background: var(--amber-l); border: 1px solid var(--amber-m);
+  border-radius: 8px; padding: 8px 20px; display: inline-block; margin-bottom: 28px;
+}
+.gate-question { font-family: 'Cormorant Garamond', serif; font-size: 32px; font-weight: 400; margin-bottom: 28px; }
+.gate-buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.gate-btn {
+  border-radius: 16px; padding: 28px 24px; text-align: left;
+  border: 1px solid; cursor: pointer; transition: all 0.25s;
+}
+.gate-btn:hover { transform: translateY(-4px); }
+.gate-btn.amber { background: var(--amber-l); border-color: var(--amber-m); }
+.gate-btn.amber:hover { box-shadow: 0 12px 40px rgba(212,136,10,0.15); border-color: var(--amber); }
+.gate-btn.teal { background: var(--teal-l); border-color: var(--teal-m); }
+.gate-btn.teal:hover { box-shadow: 0 12px 40px rgba(42,157,143,0.15); border-color: var(--teal); }
+.gate-btn-icon { font-size: 32px; margin-bottom: 12px; display: block; }
+.gate-btn-title {
+  font-family: 'Cormorant Garamond', serif; font-size: 22px; font-weight: 600;
+  display: block; margin-bottom: 6px;
+}
+.amber .gate-btn-title { color: var(--amber); }
+.teal .gate-btn-title { color: var(--teal); }
+.gate-btn-sub { font-size: 12px; color: var(--muted); line-height: 1.6; }
+.paths-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.path-card {
+  background: var(--surface); border: 1px solid var(--border2);
+  border-radius: 20px; overflow: hidden; transition: all 0.3s;
+}
+.path-card:hover { transform: translateY(-6px); }
+.path-card.c-amber { border-top: 3px solid var(--amber); }
+.path-card.c-amber:hover { box-shadow: 0 16px 50px rgba(212,136,10,0.1); }
+.path-card.c-rose { border-top: 3px solid var(--rose); }
+.path-card.c-rose:hover { box-shadow: 0 16px 50px rgba(201,99,122,0.1); }
+.path-card.c-teal { border-top: 3px solid var(--teal); }
+.path-card.c-teal:hover { box-shadow: 0 16px 50px rgba(42,157,143,0.1); }
+.pc-head { padding: 24px; text-align: center; border-bottom: 1px solid var(--border); }
+.pc-num { font-family: 'DM Mono'; font-size: 10px; letter-spacing: 2px; margin-bottom: 8px; opacity: 0.6; }
+.c-amber .pc-num { color: var(--amber); }
+.c-rose .pc-num { color: var(--rose); }
+.c-teal .pc-num { color: var(--teal); }
+.pc-icon { font-size: 32px; margin-bottom: 10px; display: block; }
+.pc-title { font-family: 'Cormorant Garamond', serif; font-size: 20px; font-weight: 600; margin-bottom: 6px; }
+.c-amber .pc-title { color: var(--amber); }
+.c-rose .pc-title { color: var(--rose); }
+.c-teal .pc-title { color: var(--teal); }
+.pc-desc { font-size: 11px; color: var(--muted); line-height: 1.6; }
+.pc-tag {
+  display: inline-block; margin-top: 10px; padding: 3px 12px;
+  border-radius: 20px; font-size: 10px; letter-spacing: 1px; text-transform: uppercase;
+}
+.c-amber .pc-tag { color: var(--amber); border: 1px solid var(--amber-m); background: var(--amber-l); }
+.c-rose .pc-tag { color: var(--rose); border: 1px solid var(--rose-m); background: var(--rose-l); }
+.c-teal .pc-tag { color: var(--teal); border: 1px solid var(--teal-m); background: var(--teal-l); }
+.pc-steps { padding: 0; }
+.pc-step {
+  padding: 12px 20px; border-bottom: 1px solid var(--border);
+  display: flex; gap: 12px; align-items: center; font-size: 12px; transition: background 0.2s;
+}
+.pc-step:last-child { border-bottom: none; }
+.pc-step:hover { background: rgba(255,255,255,0.02); }
+.pc-step-num {
+  width: 22px; height: 22px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 10px; font-weight: 600; flex-shrink: 0; font-family: 'DM Mono';
+}
+.c-amber .pc-step-num { background: var(--amber-m); color: var(--amber); }
+.c-rose .pc-step-num { background: var(--rose-m); color: var(--rose); }
+.c-teal .pc-step-num { background: var(--teal-m); color: var(--teal); }
+.pc-step-name { font-weight: 500; color: var(--text); }
+.pc-foot { padding: 18px 24px; border-top: 1px dashed var(--border2); text-align: center; }
+.pc-price { font-family: 'Cormorant Garamond', serif; font-size: 28px; font-weight: 600; }
+.c-amber .pc-price { color: var(--amber); }
+.c-rose .pc-price { color: var(--rose); }
+.c-teal .pc-price { color: var(--teal); }
+.pc-price span { font-size: 13px; font-family: 'DM Sans'; font-weight: 400; color: var(--muted); }
+.pc-who { font-size: 11px; color: var(--muted); margin-top: 4px; }
+.sim-header { text-align: center; margin-bottom: 48px; }
+.sim-tabs { display: flex; justify-content: center; gap: 8px; margin-bottom: 40px; }
+.sim-tab {
+  padding: 10px 24px; border-radius: 100px; font-size: 13px; font-weight: 500;
+  cursor: pointer; border: 1px solid var(--border2); background: var(--surface);
+  color: var(--muted); transition: all 0.2s; display: flex; align-items: center; gap: 8px;
+}
+.sim-tab:hover { border-color: var(--amber-m); color: var(--text); }
+.sim-tab.active-amber { background: var(--amber-l); border-color: var(--amber); color: var(--amber); }
+.sim-tab.active-teal { background: var(--teal-l); border-color: var(--teal); color: var(--teal); }
+.sim-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; align-items: start; }
+.sim-phone {
+  background: var(--surface); border: 1px solid var(--border2);
+  border-radius: 24px; overflow: hidden; position: relative;
+}
+.sim-phone::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; }
+.sim-phone.amber::before { background: linear-gradient(90deg, var(--amber), transparent); }
+.sim-phone.teal::before { background: linear-gradient(90deg, var(--teal), transparent); }
+.sim-phone-head {
+  padding: 20px 24px; border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: 14px;
+}
+.sim-avatar {
+  width: 48px; height: 48px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0;
+}
+.amber .sim-avatar { background: var(--amber-l); border: 2px solid var(--amber-m); }
+.teal .sim-avatar { background: var(--teal-l); border: 2px solid var(--teal-m); }
+.sim-who-name { font-family: 'Cormorant Garamond', serif; font-size: 20px; font-weight: 600; }
+.amber .sim-who-name { color: var(--amber); }
+.teal .sim-who-name { color: var(--teal); }
+.sim-who-role { font-size: 11px; color: var(--muted); }
+.sim-live {
+  margin-left: auto; display: flex; align-items: center; gap: 6px;
+  font-size: 11px; color: var(--green); font-weight: 600;
+}
+.sim-live-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); animation: pulse 2s infinite; }
+.sim-call-visual { padding: 28px 24px; text-align: center; }
+.sim-ring {
+  width: 80px; height: 80px; border-radius: 50%;
+  margin: 0 auto 16px; display: flex; align-items: center; justify-content: center;
+  font-size: 32px; position: relative;
+}
+.amber .sim-ring { background: var(--amber-l); border: 2px solid var(--amber-m); }
+.teal .sim-ring { background: var(--teal-l); border: 2px solid var(--teal-m); }
+.sim-ring::before, .sim-ring::after {
+  content: ''; position: absolute; border-radius: 50%; animation: ripple 2.5s infinite;
+}
+.sim-ring::before { inset: -12px; }
+.sim-ring::after { inset: -24px; animation-delay: 0.6s; }
+.amber .sim-ring::before, .amber .sim-ring::after { border: 1px solid var(--amber-m); }
+.teal .sim-ring::before, .teal .sim-ring::after { border: 1px solid var(--teal-m); }
+.sim-companion-name { font-family: 'Cormorant Garamond', serif; font-size: 24px; font-weight: 400; margin-bottom: 4px; }
+.amber .sim-companion-name { color: var(--amber); }
+.teal .sim-companion-name { color: var(--teal); }
+.sim-companion-desc { font-size: 11px; color: var(--muted); }
+.sim-timer { font-family: 'DM Mono'; font-size: 18px; color: var(--amber); margin-top: 8px; }
+.sim-bubbles { padding: 0 20px 20px; display: flex; flex-direction: column; gap: 12px; min-height: 200px; }
+.bubble {
+  max-width: 88%; padding: 12px 16px; border-radius: 16px; font-size: 13px; line-height: 1.7;
+  opacity: 0; transform: translateY(10px); animation: bubbleIn 0.5s ease forwards;
+}
+.bubble.ai { align-self: flex-start; border-bottom-left-radius: 4px; }
+.bubble.user { align-self: flex-end; background: var(--surface2); border: 1px solid var(--border2); color: var(--text); border-bottom-right-radius: 4px; }
+.amber .bubble.ai { background: var(--amber-l); border: 1px solid var(--amber-m); }
+.teal .bubble.ai { background: var(--teal-l); border: 1px solid var(--teal-m); }
+.bubble-name { font-size: 10px; font-weight: 600; margin-bottom: 3px; letter-spacing: 0.5px; }
+.amber .bubble.ai .bubble-name { color: var(--amber); }
+.teal .bubble.ai .bubble-name { color: var(--teal); }
+.bubble.user .bubble-name { color: var(--muted); text-align: right; }
+.memory-ref {
+  display: inline; background: rgba(212,136,10,0.18); border-radius: 3px;
+  padding: 1px 5px; color: var(--amber); font-size: 12px; font-weight: 500;
+}
+.memory-ref-teal {
+  display: inline; background: rgba(42,157,143,0.18); border-radius: 3px;
+  padding: 1px 5px; color: var(--teal); font-size: 12px; font-weight: 500;
+}
+.sim-controls {
+  padding: 16px 24px; border-top: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: center; gap: 16px;
+}
+.ctrl-btn {
+  width: 42px; height: 42px; border-radius: 50%;
+  background: var(--surface2); border: 1px solid var(--border2);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16px; cursor: pointer; transition: all 0.2s;
+}
+.ctrl-btn:hover { border-color: var(--amber-m); transform: scale(1.1); }
+.ctrl-end {
+  width: 54px; height: 54px; border-radius: 50%;
+  background: rgba(180,60,60,0.2); border: 1px solid rgba(180,60,60,0.4);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 20px; cursor: pointer; transition: all 0.2s;
+}
+.ctrl-end:hover { background: rgba(180,60,60,0.35); }
+.sim-memory-note {
+  margin: 0 20px 20px; padding: 12px 16px; border-radius: 12px;
+  font-size: 11px; display: flex; gap: 8px; align-items: flex-start; line-height: 1.6;
+}
+.amber .sim-memory-note { background: var(--amber-l); border: 1px solid var(--amber-m); color: var(--muted); }
+.teal .sim-memory-note { background: var(--teal-l); border: 1px solid var(--teal-m); color: var(--muted); }
+.sim-memory-note em { font-style: normal; }
+.amber .sim-memory-note em { color: var(--amber); }
+.teal .sim-memory-note em { color: var(--teal); }
+.sim-insights { display: flex; flex-direction: column; gap: 16px; }
+.sim-insight-card {
+  background: var(--surface); border: 1px solid var(--border2);
+  border-radius: 16px; padding: 20px; border-left: 3px solid;
+}
+.sim-insight-card.c-amber { border-left-color: var(--amber); }
+.sim-insight-card.c-teal { border-left-color: var(--teal); }
+.sim-insight-card.c-green { border-left-color: var(--green); }
+.si-icon { font-size: 20px; margin-bottom: 8px; display: block; }
+.si-title { font-size: 13px; font-weight: 600; margin-bottom: 4px; }
+.si-text { font-size: 11px; color: var(--muted); line-height: 1.6; }
+.si-tag {
+  display: inline-block; margin-top: 8px; padding: 2px 10px;
+  border-radius: 4px; font-size: 10px; font-family: 'DM Mono';
+}
+.si-tag.eleven { background: rgba(100,150,255,0.1); color: #7eb8ff; }
+.si-tag.twilio { background: rgba(255,80,80,0.1); color: #ff6b6b; }
+.si-tag.claude { background: var(--amber-l); color: var(--amber); }
+.tech-header { text-align: center; margin-bottom: 48px; }
+.pipeline-wrap {
+  background: var(--surface); border: 1px solid var(--border2);
+  border-radius: 24px; padding: 40px; position: relative; overflow: hidden; margin-bottom: 32px;
+}
+.pipeline-wrap::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+  background: linear-gradient(90deg, var(--amber), var(--rose), var(--teal));
+}
+.pipeline { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; }
+.pipe-step { display: flex; align-items: center; }
+.pipe-node {
+  background: var(--bg2); border: 1px solid var(--border2);
+  border-radius: 16px; padding: 20px 24px; text-align: center; min-width: 110px;
+  transition: all 0.3s; cursor: default;
+}
+.pipe-node:hover { border-color: var(--amber-m); transform: translateY(-4px); }
+.pipe-icon { font-size: 24px; display: block; margin-bottom: 8px; }
+.pipe-name { font-size: 12px; font-weight: 600; margin-bottom: 2px; }
+.pipe-tech { font-size: 10px; color: var(--muted); font-family: 'DM Mono'; }
+.pipe-arrow { width: 40px; height: 1px; background: var(--border2); position: relative; flex-shrink: 0; }
+.pipe-arrow::after { content: '\203A'; position: absolute; right: -4px; top: -9px; color: var(--muted); font-size: 16px; }
+.pipe-ms {
+  position: absolute; top: -18px; left: 50%; transform: translateX(-50%);
+  font-size: 10px; font-family: 'DM Mono'; color: var(--amber); white-space: nowrap;
+}
+.tech-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.tech-card {
+  background: var(--surface); border: 1px solid var(--border2);
+  border-radius: 16px; padding: 24px; transition: all 0.3s; border-top: 3px solid transparent;
+}
+.tech-card:hover { border-color: var(--amber-m); transform: translateY(-4px); }
+.tech-card.twilio { border-top-color: #ff6b6b; }
+.tech-card.eleven { border-top-color: #7eb8ff; }
+.tech-card.claude { border-top-color: var(--amber); }
+.tc-logo { font-size: 28px; margin-bottom: 12px; display: block; }
+.tc-name { font-size: 14px; font-weight: 600; margin-bottom: 4px; }
+.tc-role { font-size: 11px; color: var(--muted); line-height: 1.6; }
+.tc-tag {
+  display: inline-block; margin-top: 10px; padding: 3px 10px;
+  border-radius: 6px; font-size: 10px; font-family: 'DM Mono';
+}
+.tc-tag.twilio { background: rgba(255,80,80,0.1); color: #ff6b6b; border: 1px solid rgba(255,80,80,0.2); }
+.tc-tag.eleven { background: rgba(100,150,255,0.1); color: #7eb8ff; border: 1px solid rgba(100,150,255,0.2); }
+.tc-tag.claude { background: var(--amber-l); color: var(--amber); border: 1px solid var(--amber-m); }
+.dash-header { text-align: center; margin-bottom: 48px; }
+.dashboard-shell {
+  background: var(--surface); border: 1px solid var(--border2);
+  border-radius: 24px; overflow: hidden; position: relative;
+}
+.dashboard-shell::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+  background: linear-gradient(90deg, var(--amber), transparent 70%); opacity: 0.6;
+}
+.dash-topbar {
+  padding: 16px 24px; border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between; background: var(--bg2);
+}
+.dash-logo-text { font-family: 'Cormorant Garamond', serif; font-size: 20px; font-weight: 600; color: var(--amber); }
+.dash-user-info { display: flex; align-items: center; gap: 12px; }
+.dash-next-call { font-size: 11px; color: var(--muted); }
+.dash-next-call span { color: var(--amber); }
+.dash-avatar-sm {
+  width: 32px; height: 32px; border-radius: 50%;
+  background: var(--amber-l); border: 1px solid var(--amber-m);
+  display: flex; align-items: center; justify-content: center; font-size: 14px;
+}
+.dash-nav-bar { display: flex; border-bottom: 1px solid var(--border); padding: 0 24px; background: var(--surface2); }
+.dash-tab {
+  padding: 12px 18px; font-size: 11px; letter-spacing: 1px; text-transform: uppercase;
+  color: var(--muted); cursor: pointer; border-bottom: 2px solid transparent;
+  transition: all 0.2s; font-weight: 500;
+}
+.dash-tab:hover { color: var(--text); }
+.dash-tab.active { color: var(--amber); border-bottom-color: var(--amber); }
+.dash-content { padding: 24px; background: var(--bg2); }
+.crisis-banner {
+  background: var(--rose-l); border: 1px solid var(--rose-m); border-radius: 14px;
+  padding: 14px 18px; display: flex; align-items: center; gap: 12px;
+  margin-bottom: 20px; cursor: pointer; transition: border-color 0.2s;
+}
+.crisis-banner:hover { border-color: var(--rose); }
+.crisis-dot {
+  width: 8px; height: 8px; border-radius: 50%; background: var(--rose);
+  animation: pulse 1.5s infinite; flex-shrink: 0;
+}
+.crisis-banner-text { flex: 1; font-size: 12px; color: var(--rose); line-height: 1.5; }
+.stat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px; }
+.stat-card {
+  background: var(--surface); border: 1px solid var(--border2);
+  border-radius: 14px; padding: 18px; position: relative; overflow: hidden; transition: border-color 0.2s;
+}
+.stat-card:hover { border-color: var(--amber-m); }
+.stat-card::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+  background: linear-gradient(90deg, var(--amber), transparent); opacity: 0.4;
+}
+.stat-label { font-size: 10px; letter-spacing: 1px; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; }
+.stat-value {
+  font-family: 'Cormorant Garamond', serif; font-size: 34px; font-weight: 300;
+  color: var(--amber); line-height: 1; margin-bottom: 4px;
+}
+.stat-sub { font-size: 11px; color: var(--muted); }
+.dash-panels { display: grid; grid-template-columns: 1.4fr 1fr; gap: 16px; margin-bottom: 20px; }
+.panel { background: var(--surface); border: 1px solid var(--border2); border-radius: 14px; overflow: hidden; }
+.panel-head {
+  padding: 14px 18px; border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.panel-title { font-size: 12px; font-weight: 600; }
+.panel-action { font-size: 11px; color: var(--amber); cursor: pointer; }
+.panel-body { padding: 16px 18px; }
+.mood-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+.mood-row:last-child { margin-bottom: 0; }
+.mood-day { font-size: 10px; color: var(--muted); font-family: 'DM Mono'; width: 28px; }
+.mood-bar-bg { flex: 1; height: 8px; background: var(--border2); border-radius: 4px; overflow: hidden; }
+.mood-bar-fill { height: 100%; border-radius: 4px; transition: width 1.5s ease; }
+.mood-score { font-size: 10px; font-family: 'DM Mono'; width: 24px; text-align: right; }
+.mood-tag { display: inline-block; padding: 2px 8px; border-radius: 20px; font-size: 10px; margin-left: 6px; }
+.tag-warm { background: var(--amber-l); color: var(--amber); border: 1px solid var(--amber-m); }
+.tag-calm { background: var(--teal-l); color: var(--teal); border: 1px solid var(--teal-m); }
+.tag-low { background: var(--rose-l); color: var(--rose); border: 1px solid var(--rose-m); }
+.tag-bright { background: var(--green-l); color: var(--green); border: 1px solid var(--green-m); }
+.mem-item { display: flex; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--border); align-items: flex-start; }
+.mem-item:last-child { border-bottom: none; padding-bottom: 0; }
+.mem-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--amber); margin-top: 6px; flex-shrink: 0; }
+.mem-text { font-size: 12px; color: var(--text); line-height: 1.5; }
+.mem-date { font-size: 10px; color: var(--muted); font-family: 'DM Mono'; margin-top: 2px; }
+.call-item { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--border); }
+.call-item:last-child { border-bottom: none; }
+.call-icon { font-size: 16px; }
+.call-body { flex: 1; }
+.call-title { font-size: 12px; font-weight: 500; }
+.call-sub-text { font-size: 11px; color: var(--muted); }
+.call-meta { text-align: right; }
+.call-dur { font-size: 12px; color: var(--amber); font-family: 'DM Mono'; }
+.crisis-section {
+  background: var(--surface); border: 1px solid var(--rose-m);
+  border-radius: 24px; padding: 40px; position: relative; overflow: hidden;
+}
+.crisis-section::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+  background: var(--rose); opacity: 0.6;
+}
+.crisis-header { margin-bottom: 28px; }
+.crisis-title { font-family: 'Cormorant Garamond', serif; font-size: 28px; font-weight: 300; margin-bottom: 6px; }
+.crisis-title em { font-style: italic; color: var(--rose); }
+.crisis-sub-text { color: var(--muted); font-size: 13px; }
+.crisis-grid { display: grid; grid-template-columns: 1.2fr 1fr; gap: 20px; }
+.crisis-flow { background: var(--bg2); border: 1px solid var(--border2); border-radius: 16px; overflow: hidden; }
+.crisis-step {
+  padding: 16px 20px; border-bottom: 1px solid var(--border);
+  display: flex; gap: 14px; align-items: flex-start; transition: background 0.2s;
+}
+.crisis-step:last-child { border-bottom: none; }
+.crisis-step:hover { background: rgba(255,255,255,0.015); }
+.cs-num {
+  width: 24px; height: 24px; border-radius: 50%;
+  background: var(--rose-l); border: 1px solid var(--rose-m);
+  color: var(--rose); font-size: 10px; font-family: 'DM Mono';
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.cs-name { font-size: 13px; font-weight: 500; margin-bottom: 3px; }
+.cs-desc { font-size: 11px; color: var(--muted); line-height: 1.6; }
+.crisis-alert-mock { background: var(--bg2); border: 1px solid var(--rose-m); border-radius: 16px; overflow: hidden; }
+.alert-bar {
+  background: rgba(201,99,122,0.15); padding: 14px 18px;
+  border-bottom: 1px solid var(--rose-m); display: flex; align-items: center; gap: 8px;
+  font-size: 12px; color: var(--rose); font-weight: 600;
+}
+.alert-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--rose); animation: pulse 1.5s infinite; }
+.alert-body { padding: 18px; }
+.alert-title { font-size: 14px; font-weight: 600; margin-bottom: 8px; }
+.alert-msg { font-size: 12px; color: var(--muted); line-height: 1.7; margin-bottom: 14px; }
+.alert-quote {
+  background: var(--rose-l); border-left: 3px solid var(--rose);
+  border-radius: 0 10px 10px 0; padding: 12px 16px; font-size: 13px;
+  font-style: italic; color: var(--text); margin-bottom: 16px; line-height: 1.7;
+}
+.alert-btns { display: flex; gap: 8px; }
+.alert-btn {
+  flex: 1; padding: 12px; border-radius: 10px; text-align: center;
+  font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.2s; border: none; font-family: 'DM Sans';
+}
+.alert-btn.primary { background: var(--rose-l); border: 1px solid var(--rose-m); color: var(--rose); }
+.alert-btn.primary:hover { background: var(--rose-m); }
+.alert-btn.secondary { background: var(--surface2); border: 1px solid var(--border2); color: var(--muted); }
+.alert-btn.secondary:hover { border-color: var(--amber-m); color: var(--text); }
+#finale { padding: 60px 40px 100px; max-width: 800px; margin: 0 auto; text-align: center; }
+.finale-box {
+  background: var(--surface); border: 1px solid var(--border2);
+  border-radius: 24px; padding: 56px 48px; position: relative; overflow: hidden;
+}
+.finale-box::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+  background: linear-gradient(90deg, var(--amber), var(--rose), var(--teal));
+}
+.finale-quote {
+  font-family: 'Cormorant Garamond', serif; font-size: clamp(22px, 3vw, 30px);
+  font-style: italic; font-weight: 300; line-height: 1.6; color: var(--text); margin-bottom: 32px;
+}
+.finale-quote em { color: var(--amber); font-style: normal; font-weight: 500; }
+.finale-attr { font-size: 11px; letter-spacing: 3px; text-transform: uppercase; color: var(--muted); margin-bottom: 32px; }
+@keyframes fadeUp { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes bubbleIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.4; transform: scale(0.7); } }
+@keyframes ripple { 0% { opacity: 0.6; transform: scale(0.95); } 100% { opacity: 0; transform: scale(1.3); } }
+@keyframes bounce { 0%, 100% { transform: translateX(-50%) translateY(0); } 50% { transform: translateX(-50%) translateY(6px); } }
+.reveal { opacity: 0; transform: translateY(30px); transition: all 0.7s ease; }
+.reveal.visible { opacity: 1; transform: translateY(0); }
+@media (max-width: 900px) {
+  .sim-grid, .crisis-grid, .dash-panels { grid-template-columns: 1fr; }
+  .stat-grid { grid-template-columns: repeat(2, 1fr); }
+  .paths-grid, .tech-grid { grid-template-columns: 1fr; }
+  .gate-buttons { grid-template-columns: 1fr; }
+  .hero-stats { flex-direction: column; gap: 20px; }
+  .pipeline { flex-wrap: wrap; justify-content: center; }
+  .section { padding: 60px 20px; }
+  .topnav { padding: 0 20px; }
+  .nav-links { gap: 16px; }
+  .nav-links a { font-size: 10px; }
+}
+@media (max-width: 600px) {
+  .nav-links a:not(.nav-cta) { display: none; }
+}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav class="topnav" id="topnav">
+  <a href="#hero" class="nav-logo">Solum</a>
+  <div class="nav-links">
+    <a href="#gate">How it works</a>
+    <a href="#simulator">Live demo</a>
+    <a href="#tech">Tech stack</a>
+    <a href="#dashboard">Dashboard</a>
+    <a href="#finale" class="nav-cta">Try Solum</a>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section id="hero">
+  <div class="hero-badge"><span class="hero-badge-dot"></span>Hack for Humanity 2026</div>
+  <h1 class="hero-title">She just answers<br>the phone.<br><em>And someone knows her.</em></h1>
+  <p class="hero-sub">Solum is an AI companion that calls elderly parents and overwhelmed women daily — remembers their stories, tracks their mood, and alerts family if something feels wrong.</p>
+  <div class="hero-ctas">
+    <a href="#simulator" class="btn btn-primary">See the live demo</a>
+    <a href="#gate" class="btn btn-ghost">How it works</a>
+  </div>
+  <div class="hero-stats">
+    <div><div class="hero-stat-val">$39</div><div class="hero-stat-label">Per month</div></div>
+    <div><div class="hero-stat-val">2.4s</div><div class="hero-stat-label">Response time</div></div>
+    <div><div class="hero-stat-val">0</div><div class="hero-stat-label">Apps to install</div></div>
+  </div>
+  <a href="#gate" class="hero-scroll">Scroll ↓</a>
+</section>
+
+<!-- GATE -->
+<div class="divider"><span class="divider-label">Who is Solum for?</span></div>
+<section id="gate" class="section section-sm">
+  <div class="gate-box reveal">
+    <div class="gate-label">Entry point</div>
+    <div class="gate-url">solum.ai</div>
+    <div class="gate-question">"Who is Solum for today?"</div>
+    <div class="gate-buttons">
+      <div class="gate-btn amber" onclick="switchSim('elderly');document.getElementById('simulator').scrollIntoView({behavior:'smooth'})">
+        <span class="gate-btn-icon">👵</span>
+        <span class="gate-btn-title">Someone I love</span>
+        <span class="gate-btn-sub">Set this up for an elderly parent. They just answer the phone — no apps, no screens.</span>
+      </div>
+      <div class="gate-btn teal" onclick="switchSim('woman');document.getElementById('simulator').scrollIntoView({behavior:'smooth'})">
+        <span class="gate-btn-icon">🙋‍♀️</span>
+        <span class="gate-btn-title">Myself</span>
+        <span class="gate-btn-sub">You're doing a lot. Sign up for yourself. You deserve someone who asks how you are.</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- THREE PATHS -->
+<div class="divider"><span class="divider-label">Three paths in — One voice out</span></div>
+<section id="paths" class="section">
+  <div class="paths-header reveal">
+    <h2 class="sec-title">Every user arrives <em>differently.</em></h2>
+    <p class="sec-sub">Every call feels the same — warm, personal, like someone who actually knows you.</p>
+  </div>
+  <div class="paths-grid">
+    <div class="path-card c-amber reveal">
+      <div class="pc-head"><div class="pc-num">PATH 01</div><span class="pc-icon">💻</span><div class="pc-title">Family Web Signup</div><div class="pc-desc">Adult child sets up their parent. 90 seconds.</div><span class="pc-tag">Most common</span></div>
+      <div class="pc-steps">
+        <div class="pc-step"><div class="pc-step-num">1</div><div><div class="pc-step-name">Visit solum.ai → "Someone I love"</div></div></div>
+        <div class="pc-step"><div class="pc-step-num">2</div><div><div class="pc-step-name">Fill 4-field parent profile</div></div></div>
+        <div class="pc-step"><div class="pc-step-num">3</div><div><div class="pc-step-name">Choose companion voice (ElevenLabs)</div></div></div>
+        <div class="pc-step"><div class="pc-step-num">4</div><div><div class="pc-step-name">Click "Call Now" to test (Twilio)</div></div></div>
+        <div class="pc-step"><div class="pc-step-num">5</div><div><div class="pc-step-name">Schedule goes live — she just answers</div></div></div>
+      </div>
+      <div class="pc-foot"><div class="pc-price">$39<span>/mo</span></div><div class="pc-who">Paid by family</div></div>
+    </div>
+    <div class="path-card c-rose reveal">
+      <div class="pc-head"><div class="pc-num">PATH 02</div><span class="pc-icon">💬</span><div class="pc-title">SMS Self-Registration</div><div class="pc-desc">Text "HELLO" to Solum. No smartphone needed.</div><span class="pc-tag">No tech required</span></div>
+      <div class="pc-steps">
+        <div class="pc-step"><div class="pc-step-num">1</div><div><div class="pc-step-name">Text "HELLO" — any phone works</div></div></div>
+        <div class="pc-step"><div class="pc-step-num">2</div><div><div class="pc-step-name">AI guides them via SMS — 5 questions</div></div></div>
+        <div class="pc-step"><div class="pc-step-num">3</div><div><div class="pc-step-name">Profile created automatically</div></div></div>
+        <div class="pc-step"><div class="pc-step-num">4</div><div><div class="pc-step-name">Confirmation: "Eleanor calls tomorrow"</div></div></div>
+        <div class="pc-step"><div class="pc-step-num">5</div><div><div class="pc-step-name">First call already knows her name</div></div></div>
+      </div>
+      <div class="pc-foot"><div class="pc-price">$19<span>/mo</span></div><div class="pc-who">Self-pay or family billing</div></div>
+    </div>
+    <div class="path-card c-teal reveal">
+      <div class="pc-head"><div class="pc-num">PATH 03</div><span class="pc-icon">🙋‍♀️</span><div class="pc-title">She Signs Up For Herself</div><div class="pc-desc">She chose herself for once.</div><span class="pc-tag">For herself</span></div>
+      <div class="pc-steps">
+        <div class="pc-step"><div class="pc-step-num">1</div><div><div class="pc-step-name">Visit solum.ai → "Myself"</div></div></div>
+        <div class="pc-step"><div class="pc-step-num">2</div><div><div class="pc-step-name">Tells her story in her own words</div></div></div>
+        <div class="pc-step"><div class="pc-step-num">3</div><div><div class="pc-step-name">AI builds her memory profile</div></div></div>
+        <div class="pc-step"><div class="pc-step-num">4</div><div><div class="pc-step-name">She sets her own schedule</div></div></div>
+        <div class="pc-step"><div class="pc-step-num">5</div><div><div class="pc-step-name">Maya calls: "How are YOU doing?"</div></div></div>
+      </div>
+      <div class="pc-foot"><div class="pc-price">$19<span>/mo</span></div><div class="pc-who">First thing she bought just for her</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- CALL SIMULATOR -->
+<div class="divider"><span class="divider-label">See it in action</span></div>
+<section id="simulator" class="section">
+  <div class="sim-header reveal">
+    <h2 class="sec-title">Watch a call <em>happen.</em></h2>
+    <p class="sec-sub">The phone rings. She answers. And someone who remembers her speaks.</p>
+  </div>
+  <div class="sim-tabs reveal">
+    <div class="sim-tab active-amber" id="tab-elderly" onclick="switchSim('elderly')">👵 Eleanor calls Margaret</div>
+    <div class="sim-tab" id="tab-woman" onclick="switchSim('woman')">🙋‍♀️ Maya calls Priya</div>
+  </div>
+  <div class="sim-grid">
+    <div class="sim-phone amber reveal" id="sim-phone">
+      <div class="sim-phone-head">
+        <div class="sim-avatar" id="sim-avatar">👵</div>
+        <div><div class="sim-who-name" id="sim-name">Eleanor calls Margaret</div><div class="sim-who-role" id="sim-role">Elderly user · Tuesday 10am</div></div>
+        <div class="sim-live"><div class="sim-live-dot"></div>Live</div>
+      </div>
+      <div class="sim-call-visual">
+        <div class="sim-ring">🎙️</div>
+        <div class="sim-companion-name" id="sim-comp-name">Eleanor</div>
+        <div class="sim-companion-desc" id="sim-comp-desc">Warm · Retired schoolteacher</div>
+        <div class="sim-timer" id="sim-timer">00:00</div>
+      </div>
+      <div class="sim-bubbles" id="sim-bubbles"></div>
+      <div class="sim-controls">
+        <div class="ctrl-btn">🔇</div>
+        <div class="ctrl-end" onclick="startConvo()">🔄</div>
+        <div class="ctrl-btn">🔊</div>
+      </div>
+      <div class="sim-memory-note" id="sim-note"><span>✨</span><span><em>Memory references highlighted</em> — Eleanor knows Sarah's name, the recital, Robert. Extracted from previous calls.</span></div>
+    </div>
+    <div class="sim-insights reveal" id="sim-insights">
+      <div class="sim-insight-card c-amber"><span class="si-icon">📞</span><div class="si-title">Twilio places the call</div><div class="si-text">Outbound call. Her phone rings at her chosen time. Any phone works.</div><span class="si-tag twilio">Twilio</span></div>
+      <div class="sim-insight-card c-green"><span class="si-icon">🎙️</span><div class="si-title">She speaks. We listen.</div><div class="si-text">Real-time speech-to-text. ~400ms latency.</div><span class="si-tag claude">Whisper STT</span></div>
+      <div class="sim-insight-card c-amber"><span class="si-icon">🧠</span><div class="si-title">AI thinks + remembers</div><div class="si-text">Claude reads 47 memories and generates a personal response. ~1.2s.</div><span class="si-tag claude">Claude AI</span></div>
+      <div class="sim-insight-card c-teal"><span class="si-icon">🔊</span><div class="si-title">ElevenLabs speaks back</div><div class="si-text">Response becomes Eleanor's voice — warm, natural, human. ~800ms.</div><span class="si-tag eleven">ElevenLabs</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- TECH PIPELINE -->
+<div class="divider"><span class="divider-label">The engine behind every call</span></div>
+<section id="tech" class="section">
+  <div class="tech-header reveal">
+    <h2 class="sec-title">Built with <em>three APIs.</em></h2>
+    <p class="sec-sub">Twilio for the phone. ElevenLabs for the voice. Claude for the soul.</p>
+  </div>
+  <div class="pipeline-wrap reveal">
+    <div class="pipeline">
+      <div class="pipe-step"><div class="pipe-node"><span class="pipe-icon">📞</span><div class="pipe-name">Outbound Call</div><div class="pipe-tech">Twilio</div></div><div class="pipe-arrow"><span class="pipe-ms">0ms</span></div></div>
+      <div class="pipe-step"><div class="pipe-node"><span class="pipe-icon">🎙️</span><div class="pipe-name">Voice → Text</div><div class="pipe-tech">Whisper</div></div><div class="pipe-arrow"><span class="pipe-ms">~400ms</span></div></div>
+      <div class="pipe-step"><div class="pipe-node"><span class="pipe-icon">🧠</span><div class="pipe-name">Think + Remember</div><div class="pipe-tech">Claude + Memory</div></div><div class="pipe-arrow"><span class="pipe-ms">~1200ms</span></div></div>
+      <div class="pipe-step"><div class="pipe-node"><span class="pipe-icon">🔊</span><div class="pipe-name">Text → Voice</div><div class="pipe-tech">ElevenLabs</div></div><div class="pipe-arrow"><span class="pipe-ms">~800ms</span></div></div>
+      <div class="pipe-step"><div class="pipe-node"><span class="pipe-icon">☎️</span><div class="pipe-name">She Hears Her</div><div class="pipe-tech">~2.4s total</div></div></div>
+    </div>
+  </div>
+  <div class="tech-grid">
+    <div class="tech-card twilio reveal"><span class="tc-logo">📞</span><div class="tc-name">Twilio</div><div class="tc-role">Outbound voice calls + SMS registration. Any phone — landline, flip phone, smartphone.</div><span class="tc-tag twilio">Voice + SMS API</span></div>
+    <div class="tech-card eleven reveal"><span class="tc-logo">🔊</span><div class="tc-name">ElevenLabs</div><div class="tc-role">Ultra-realistic voice synthesis. Eleanor sounds like a real person. Warm, natural, with emotion.</div><span class="tc-tag eleven">Voice Synthesis</span></div>
+    <div class="tech-card claude reveal"><span class="tc-logo">🧠</span><div class="tc-name">Claude AI</div><div class="tc-role">Conversation intelligence, memory extraction, mood detection, crisis scanning.</div><span class="tc-tag claude">Intelligence Layer</span></div>
+  </div>
+</section>
+
+<!-- DASHBOARD -->
+<div class="divider"><span class="divider-label">What the family sees</span></div>
+<section id="dashboard" class="section">
+  <div class="dash-header reveal"><h2 class="sec-title">The family <em>dashboard.</em></h2><p class="sec-sub">Every call. Every memory. Every mood. Families stay connected.</p></div>
+  <div class="dashboard-shell reveal">
+    <div class="dash-topbar"><div class="dash-logo-text">Solum</div><div class="dash-user-info"><div class="dash-next-call">Next call: <span>Tomorrow · 10:00 AM</span></div><div class="dash-avatar-sm">👵</div></div></div>
+    <div class="dash-nav-bar"><div class="dash-tab active">Overview</div><div class="dash-tab">Memories</div><div class="dash-tab">Call History</div><div class="dash-tab">Mood</div><div class="dash-tab">Settings</div></div>
+    <div class="dash-content">
+      <div class="crisis-banner"><div class="crisis-dot"></div><div class="crisis-banner-text"><strong>Concern detected</strong> — Wednesday's call showed signs of low mood. Eleanor mentioned it twice.</div><span style="color:var(--rose)">→</span></div>
+      <div class="stat-grid">
+        <div class="stat-card"><div class="stat-label">Total calls</div><div class="stat-value">23</div><div class="stat-sub">Since joining</div></div>
+        <div class="stat-card"><div class="stat-label">Memories</div><div class="stat-value">47</div><div class="stat-sub">Things Eleanor knows</div></div>
+        <div class="stat-card"><div class="stat-label">Avg length</div><div class="stat-value">18<span style="font-size:16px;color:var(--muted)">m</span></div><div class="stat-sub">This month</div></div>
+        <div class="stat-card"><div class="stat-label">Mood</div><div class="stat-value" style="font-size:26px">😊</div><div class="stat-sub" style="color:var(--green)">Warm & engaged</div></div>
+      </div>
+      <div class="dash-panels">
+        <div class="panel"><div class="panel-head"><span class="panel-title">Mood this week</span></div>
+          <div class="panel-body">
+            <div class="mood-row"><span class="mood-day">Mon</span><div class="mood-bar-bg"><div class="mood-bar-fill" style="width:82%;background:var(--amber)"></div></div><span class="mood-score" style="color:var(--amber)">8.2</span><span class="mood-tag tag-warm">Warm</span></div>
+            <div class="mood-row"><span class="mood-day">Tue</span><div class="mood-bar-bg"><div class="mood-bar-fill" style="width:65%;background:var(--teal)"></div></div><span class="mood-score" style="color:var(--teal)">6.5</span><span class="mood-tag tag-calm">Calm</span></div>
+            <div class="mood-row"><span class="mood-day">Wed</span><div class="mood-bar-bg"><div class="mood-bar-fill" style="width:42%;background:var(--rose)"></div></div><span class="mood-score" style="color:var(--rose)">4.2</span><span class="mood-tag tag-low">⚠️ Low</span></div>
+            <div class="mood-row"><span class="mood-day">Thu</span><div class="mood-bar-bg"><div class="mood-bar-fill" style="width:90%;background:var(--green)"></div></div><span class="mood-score" style="color:var(--green)">9.0</span><span class="mood-tag tag-bright">Joyful</span></div>
+            <div class="mood-row"><span class="mood-day">Fri</span><div class="mood-bar-bg"><div class="mood-bar-fill" style="width:78%;background:var(--amber)"></div></div><span class="mood-score" style="color:var(--amber)">7.8</span><span class="mood-tag tag-warm">Warm</span></div>
+          </div>
+        </div>
+        <div class="panel"><div class="panel-head"><span class="panel-title">Recent memories</span><span class="panel-action">47 total</span></div>
+          <div class="panel-body" style="padding:10px 16px">
+            <div class="mem-item"><div class="mem-dot"></div><div><div class="mem-text">Sarah's recital — she played Chopin perfectly</div><div class="mem-date">Thu Feb 27</div></div></div>
+            <div class="mem-item"><div class="mem-dot"></div><div><div class="mem-text">Morning tea — two sugars, no milk, before 9am</div><div class="mem-date">Wed Feb 26</div></div></div>
+            <div class="mem-item"><div class="mem-dot"></div><div><div class="mem-text">Robert had a baritone voice, sang in church</div><div class="mem-date">Mon Feb 24</div></div></div>
+          </div>
+        </div>
+      </div>
+      <div class="panel"><div class="panel-head"><span class="panel-title">Recent calls</span></div>
+        <div class="panel-body" style="padding:6px 16px">
+          <div class="call-item"><span class="call-icon">📞</span><div class="call-body"><div class="call-title">Eleanor · "Sarah's recital was wonderful"</div><div class="call-sub-text">Joyful — brought up Robert unprompted</div></div><div class="call-meta"><div class="call-dur">22m</div><span class="mood-tag tag-bright">Joyful</span></div></div>
+          <div class="call-item"><span class="call-icon">📞</span><div class="call-body"><div class="call-title">Eleanor · Quieter today</div><div class="call-sub-text">Short responses, crisis flag raised</div></div><div class="call-meta"><div class="call-dur">11m</div><span class="mood-tag tag-low">⚠️</span></div></div>
+          <div class="call-item"><span class="call-icon">📞</span><div class="call-body"><div class="call-title">Eleanor · Talked about the garden</div><div class="call-sub-text">Planting roses in 1987. Laughed a lot.</div></div><div class="call-meta"><div class="call-dur">19m</div><span class="mood-tag tag-warm">Warm</span></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CRISIS -->
+<div class="divider"><span class="divider-label">If something feels wrong</span></div>
+<section id="crisis" class="section">
+  <div class="crisis-section reveal">
+    <div class="crisis-header"><h2 class="crisis-title">Always listening. <em>Never alarming without reason.</em></h2><p class="crisis-sub-text">Claude scans every transcript. If distress signals appear, family is notified instantly.</p></div>
+    <div class="crisis-grid">
+      <div class="crisis-flow">
+        <div class="crisis-step"><div class="cs-num">1</div><div><div class="cs-name">Call ends normally</div><div class="cs-desc">She doesn't know a scan runs. It always does.</div></div></div>
+        <div class="crisis-step"><div class="cs-num">2</div><div><div class="cs-name">Claude reads the transcript</div><div class="cs-desc">Looking for distress, unusual silence, hopelessness.</div></div></div>
+        <div class="crisis-step"><div class="cs-num">3</div><div><div class="cs-name">Signal detected</div><div class="cs-desc">"I don't see the point anymore" — said twice.</div></div></div>
+        <div class="crisis-step"><div class="cs-num">4</div><div><div class="cs-name">Family notified instantly</div><div class="cs-desc">Push notification + email. Exact quote included.</div></div></div>
+        <div class="crisis-step"><div class="cs-num">5</div><div><div class="cs-name">Eleanor follows up next call</div><div class="cs-desc">"You seemed quiet yesterday. How are you?"</div></div></div>
+      </div>
+      <div class="crisis-alert-mock">
+        <div class="alert-bar"><div class="alert-dot"></div>Alert · Solum detected a concern</div>
+        <div class="alert-body">
+          <div class="alert-title">Margaret may need you today</div>
+          <div class="alert-msg">Eleanor noticed Margaret seemed unusually low. She mentioned feeling alone twice:</div>
+          <div class="alert-quote">"I don't see the point anymore. Some days I just don't know why I bother getting up."</div>
+          <div class="alert-msg">This may be grief or something more. You know her best.</div>
+          <div class="alert-btns"><button class="alert-btn primary">📞 Call Margaret now</button><button class="alert-btn secondary">Mark as reviewed</button></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FINALE -->
+<div class="divider"><span class="divider-label">The pitch in one breath</span></div>
+<section id="finale">
+  <div class="finale-box reveal">
+    <div class="finale-quote">"A robot companion costs <em>$125,000</em>. We built the same warmth, the same memory, the same feeling of being known — for the price of a Netflix subscription. Because loneliness doesn't only happen to rich people. And nobody asks the woman holding everything together if <em>she</em> is okay."</div>
+    <div class="finale-attr">Solum · Hack for Humanity 2026</div>
+    <a href="#hero" class="btn btn-primary">Try Solum today</a>
+  </div>
+</section>
+
+<script>
+// NAV SCROLL
+window.addEventListener('scroll', () => {
+  document.getElementById('topnav').classList.toggle('scrolled', window.scrollY > 50);
+});
+
+// SCROLL REVEAL
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(e => {
+    if (e.isIntersecting) { e.target.classList.add('visible'); observer.unobserve(e.target); }
+  });
+}, { threshold: 0.12, rootMargin: '0px 0px -40px 0px' });
+document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+// CONVERSATION DATA
+const elderlyConvo = [
+  { type: 'ai', name: 'Eleanor', text: 'Good morning Margaret! I\'ve been thinking about you. Last time you mentioned <span class="memory-ref">Sarah\'s recital</span> \u2014 how did it go? Was she nervous beforehand?' },
+  { type: 'user', name: 'Margaret', text: 'Oh she was wonderful! She played that Chopin piece perfectly. I cried the whole time.' },
+  { type: 'ai', name: 'Eleanor', text: 'Oh I can just imagine \u2014 a grandmother\'s tears are the best kind of applause. Did <span class="memory-ref">your late husband Robert</span> love music too? I remember you saying he had a beautiful voice.' },
+  { type: 'user', name: 'Margaret', text: 'Oh Robert... he sang Ave Maria at our wedding. The whole church went silent. Forty-four years and I still hear it.' },
+  { type: 'ai', name: 'Eleanor', text: 'That\'s the kind of love that doesn\'t fade, Margaret. He sounds like a remarkable man. Tell me more about that day \u2014 was it a big wedding?' }
+];
+const womanConvo = [
+  { type: 'ai', name: 'Maya', text: 'Hey Priya. It\'s Sunday. How are <em>you</em> doing \u2014 and I mean actually, not the version you tell everyone else.' },
+  { type: 'user', name: 'Priya', text: 'Honestly exhausted. The thesis chapter is due Friday and I still had to cook dinner and it\'s just... a lot.' },
+  { type: 'ai', name: 'Maya', text: 'That\'s a lot to carry. Last week you said <span class="memory-ref-teal">your advisor finally gave positive feedback</span> \u2014 did that give you any momentum, or did it get buried under everything else?' },
+  { type: 'user', name: 'Priya', text: 'It helped for like a day. Then the in-laws came over and I had to pretend everything was fine while dying inside.' },
+  { type: 'ai', name: 'Maya', text: 'You don\'t have to pretend with me. You know that, right? What would make this week even a little bit lighter for you?' }
+];
+
+let currentSim = 'elderly';
+let simTimeouts = [];
+let timerInterval = null;
+let timerSeconds = 0;
+
+function switchSim(type) {
+  currentSim = type;
+  const phone = document.getElementById('sim-phone');
+  const tabE = document.getElementById('tab-elderly');
+  const tabW = document.getElementById('tab-woman');
+  if (type === 'elderly') {
+    phone.className = 'sim-phone amber reveal visible';
+    tabE.className = 'sim-tab active-amber';
+    tabW.className = 'sim-tab';
+    document.getElementById('sim-avatar').textContent = '\uD83D\uDC75';
+    document.getElementById('sim-name').textContent = 'Eleanor calls Margaret';
+    document.getElementById('sim-role').textContent = 'Elderly user \u00B7 Tuesday 10am';
+    document.getElementById('sim-comp-name').textContent = 'Eleanor';
+    document.getElementById('sim-comp-desc').textContent = 'Warm \u00B7 Retired schoolteacher';
+    document.getElementById('sim-note').innerHTML = '<span>\u2728</span><span><em>Memory references highlighted</em> \u2014 Eleanor knows Sarah\'s name, the recital, Robert. Extracted from previous calls.</span>';
+    updateInsights('elderly');
+  } else {
+    phone.className = 'sim-phone teal reveal visible';
+    tabE.className = 'sim-tab';
+    tabW.className = 'sim-tab active-teal';
+    document.getElementById('sim-avatar').textContent = '\uD83D\uDE4B\u200D\u2640\uFE0F';
+    document.getElementById('sim-name').textContent = 'Maya calls Priya';
+    document.getElementById('sim-role').textContent = 'Personal user \u00B7 Sunday 9pm';
+    document.getElementById('sim-comp-name').textContent = 'Maya';
+    document.getElementById('sim-comp-desc').textContent = 'Empathetic \u00B7 Peer-level \u00B7 Her age';
+    document.getElementById('sim-note').innerHTML = '<span>\u2728</span><span><em>Memory references highlighted</em> \u2014 Maya remembers the advisor feedback from last week. Priya never had to repeat herself.</span>';
+    updateInsights('woman');
+  }
+  startConvo();
+}
+
+function updateInsights(type) {
+  var el = document.getElementById('sim-insights');
+  if (type === 'elderly') {
+    el.innerHTML = '<div class="sim-insight-card c-amber"><span class="si-icon">\uD83D\uDCDE</span><div class="si-title">Twilio places the call</div><div class="si-text">Outbound call. Margaret\'s phone rings at her chosen time. Any phone works.</div><span class="si-tag twilio">Twilio</span></div><div class="sim-insight-card c-green"><span class="si-icon">\uD83C\uDF99\uFE0F</span><div class="si-title">She speaks. We listen.</div><div class="si-text">Real-time speech-to-text via Whisper. ~400ms latency.</div><span class="si-tag claude">Whisper STT</span></div><div class="sim-insight-card c-amber"><span class="si-icon">\uD83E\uDDE0</span><div class="si-title">AI thinks + remembers</div><div class="si-text">Claude reads her 47 memories and generates a personal response. ~1.2s.</div><span class="si-tag claude">Claude AI</span></div><div class="sim-insight-card c-teal"><span class="si-icon">\uD83D\uDD0A</span><div class="si-title">ElevenLabs speaks back</div><div class="si-text">Response becomes Eleanor\'s voice \u2014 warm, natural, with real emotion. ~800ms.</div><span class="si-tag eleven">ElevenLabs</span></div>';
+  } else {
+    el.innerHTML = '<div class="sim-insight-card c-teal"><span class="si-icon">\uD83D\uDCDE</span><div class="si-title">Twilio places the call</div><div class="si-text">Priya chose Sunday 9pm \u2014 when the house is quiet. Maya calls right on time via Twilio.</div><span class="si-tag twilio">Twilio</span></div><div class="sim-insight-card c-green"><span class="si-icon">\uD83C\uDF99\uFE0F</span><div class="si-title">She\'s honest for once</div><div class="si-text">Maya doesn\'t judge. Priya can say she\'s exhausted without guilt.</div><span class="si-tag claude">Whisper STT</span></div><div class="sim-insight-card c-teal"><span class="si-icon">\uD83E\uDDE0</span><div class="si-title">AI remembers her week</div><div class="si-text">Claude knows the thesis, the advisor feedback, the in-laws. References her actual life.</div><span class="si-tag claude">Claude AI</span></div><div class="sim-insight-card c-amber"><span class="si-icon">\uD83D\uDD0A</span><div class="si-title">Maya speaks like a friend</div><div class="si-text">ElevenLabs gives Maya a peer-level voice \u2014 warm but real. Like a best friend checking in.</div><span class="si-tag eleven">ElevenLabs</span></div>';
+  }
+}
+
+function startConvo() {
+  simTimeouts.forEach(function(t) { clearTimeout(t); });
+  simTimeouts = [];
+  if (timerInterval) clearInterval(timerInterval);
+  var bubbles = document.getElementById('sim-bubbles');
+  bubbles.innerHTML = '';
+  timerSeconds = 0;
+  document.getElementById('sim-timer').textContent = '00:00';
+  timerInterval = setInterval(function() {
+    timerSeconds++;
+    var m = String(Math.floor(timerSeconds / 60)).padStart(2, '0');
+    var s = String(timerSeconds % 60).padStart(2, '0');
+    document.getElementById('sim-timer').textContent = m + ':' + s;
+  }, 1000);
+  var convo = currentSim === 'elderly' ? elderlyConvo : womanConvo;
+  convo.forEach(function(msg, i) {
+    var delay = i === 0 ? 1500 : 1500 + (i * 2800);
+    var t = setTimeout(function() {
+      var div = document.createElement('div');
+      div.className = 'bubble ' + (msg.type === 'ai' ? 'ai' : 'user');
+      div.innerHTML = '<div class="bubble-name">' + msg.name + '</div>' + msg.text;
+      bubbles.appendChild(div);
+      bubbles.scrollTop = bubbles.scrollHeight;
+    }, delay);
+    simTimeouts.push(t);
+  });
+}
+
+// Auto-start when simulator visible
+var simObserver = new IntersectionObserver(function(entries) {
+  entries.forEach(function(e) {
+    if (e.isIntersecting) { startConvo(); simObserver.unobserve(e.target); }
+  });
+}, { threshold: 0.3 });
+var simEl = document.getElementById('simulator');
+if (simEl) simObserver.observe(simEl);
+
+// Smooth scroll
+document.querySelectorAll('a[href^="#"]').forEach(function(a) {
+  a.addEventListener('click', function(e) {
+    var href = this.getAttribute('href');
+    if (href && href !== '#') {
+      var target = document.querySelector(href);
+      if (target) { e.preventDefault(); target.scrollIntoView({ behavior: 'smooth' }); }
+    }
+  });
+});
+</script>
+</body>
+</html>

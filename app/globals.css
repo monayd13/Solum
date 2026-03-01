@@ -1,0 +1,119 @@
+@import "tailwindcss";
+
+/* ── Dark theme (default) ── */
+:root,
+[data-theme="dark"] {
+  --bg: #0d0b08;
+  --bg2: #131008;
+  --surface: #1a1610;
+  --surface2: #201c12;
+  --border: #2a2415;
+  --border2: #3d3520;
+  --text: #f0ead8;
+  --muted: #7a6e55;
+  --muted2: #4a4232;
+  --amber: #d4880a;
+  --amber-l: rgba(212, 136, 10, 0.10);
+  --amber-m: rgba(212, 136, 10, 0.25);
+  --teal: #2a9d8f;
+  --teal-l: rgba(42, 157, 143, 0.10);
+  --teal-m: rgba(42, 157, 143, 0.25);
+  --rose: #c9637a;
+  --rose-l: rgba(201, 99, 122, 0.10);
+  --rose-m: rgba(201, 99, 122, 0.25);
+  --green: #5a9e6a;
+  --green-l: rgba(90, 158, 106, 0.10);
+  --green-m: rgba(90, 158, 106, 0.25);
+}
+
+/* ── Light theme ── */
+[data-theme="light"] {
+  --bg: #faf7f0;
+  --bg2: #f3ede2;
+  --surface: #ffffff;
+  --surface2: #f0ead8;
+  --border: #e0d8c8;
+  --border2: #c8bfa8;
+  --text: #18140e;
+  --muted: #7a6e55;
+  --muted2: #b0a48a;
+  --amber: #c06800;
+  --amber-l: rgba(192, 104, 0, 0.10);
+  --amber-m: rgba(192, 104, 0, 0.25);
+  --teal: #1e7a6e;
+  --teal-l: rgba(30, 122, 110, 0.10);
+  --teal-m: rgba(30, 122, 110, 0.25);
+  --rose: #b04060;
+  --rose-l: rgba(176, 64, 96, 0.10);
+  --rose-m: rgba(176, 64, 96, 0.25);
+  --green: #3a7a4a;
+  --green-l: rgba(58, 122, 74, 0.10);
+  --green-m: rgba(58, 122, 74, 0.25);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px;
+  line-height: 1.6;
+  overflow-x: hidden;
+  transition: background 0.3s, color 0.3s;
+}
+
+/* ── Animations ── */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(24px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes bubbleIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%       { opacity: 0.4; transform: scale(0.7); }
+}
+
+@keyframes ripple {
+  0%   { opacity: 0.6; transform: scale(0.95); }
+  100% { opacity: 0;   transform: scale(1.3); }
+}
+
+@keyframes bounce {
+  0%, 100% { transform: translateX(-50%) translateY(0); }
+  50%       { transform: translateX(-50%) translateY(6px); }
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+.animate-fadeUp   { animation: fadeUp 0.8s ease both; }
+.animate-pulse-dot { animation: pulse 2s infinite; }
+.animate-ripple   { animation: ripple 2.5s infinite; }
+.animate-spin-slow { animation: spin 3s linear infinite; }
+
+/* ── Reveal on scroll ── */
+.reveal {
+  opacity: 0;
+  transform: translateY(30px);
+  transition: all 0.7s ease;
+}
+.reveal.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
