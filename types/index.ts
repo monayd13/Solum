@@ -5,6 +5,7 @@ export interface UserProfile {
   phone: string | null;
   dob: string | null;
   gender: "female" | "male" | "non-binary" | "other" | null;
+  default_phone_agent_id: string | null;
   created_at: string;
 }
 
