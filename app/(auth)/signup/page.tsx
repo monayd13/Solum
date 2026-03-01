@@ -105,6 +105,8 @@ export default function SignupPage() {
     });
 
     if (signUpError) {
+      console.error("[Signup] Auth signUp failed:", JSON.stringify(signUpError, null, 2));
+      console.error("[Signup] Error status:", signUpError.status, "code:", signUpError.code, "message:", signUpError.message);
       setError(signUpError.message);
       setLoading(false);
       return;

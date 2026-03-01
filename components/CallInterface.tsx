@@ -159,14 +159,19 @@ export function CallInterface({ agent }: CallInterfaceProps) {
           {status === "idle" || status === "error" ? (
             <button
               onClick={connect}
-              className="flex items-center gap-2 px-8 py-4 rounded-full font-semibold text-sm transition-all duration-200"
+              className="flex items-center gap-3 rounded-2xl font-semibold transition-all duration-300 hover:scale-105 active:scale-95"
               style={{
+                padding: "16px 40px",
+                fontSize: "16px",
                 background: accentColor,
-                color: "var(--bg)",
-                boxShadow: `0 8px 30px ${accentColor}40`,
+                color: "#fff",
+                boxShadow: `0 6px 30px ${accentColor}50, 0 0 80px ${accentColor}15`,
+                border: "none",
+                letterSpacing: "0.5px",
+                cursor: "pointer",
               }}
             >
-              <Phone size={16} />
+              <Phone size={18} />
               Call {name}
             </button>
           ) : status === "connecting" ? (
