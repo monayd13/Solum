@@ -37,7 +37,7 @@ export function FAQ() {
   ];
 
   return (
-    <section id="faq" style={{ padding: "80px 40px", background: "var(--bg)" }}>
+    <section style={{ padding: "80px 40px", background: "var(--bg)" }}>
       <div style={{ maxWidth: "720px", margin: "0 auto" }}>
         <div style={{ textAlign: "center", marginBottom: "56px" }}>
           <p style={{ fontSize: "11px", textTransform: "uppercase", letterSpacing: "3px", color: "var(--amber)", marginBottom: "12px" }}>
