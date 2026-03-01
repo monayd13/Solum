@@ -8,6 +8,10 @@ CREATE TABLE public.profiles (
   id UUID REFERENCES auth.users(id) ON DELETE CASCADE PRIMARY KEY,
   full_name TEXT,
   avatar_url TEXT,
+  phone TEXT,
+  age INTEGER,
+  dob DATE,
+  gender TEXT CHECK (gender IN ('female', 'male', 'non-binary', 'other')),
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
