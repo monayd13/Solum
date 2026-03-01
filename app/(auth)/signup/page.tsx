@@ -311,11 +311,6 @@ export default function SignupPage() {
               />
             </div>
 
-            {/* ── Password ── */}
-            <p className="text-xs uppercase tracking-widest mt-1" style={{ color: "var(--muted)" }}>
-              Password
-            </p>
-
             {/* Password */}
             <div className="flex flex-col gap-1.5">
               <label className="text-xs uppercase tracking-widest" style={{ color: "var(--muted)" }}>
