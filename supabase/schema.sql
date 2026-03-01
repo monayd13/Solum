@@ -17,7 +17,7 @@ CREATE TABLE public.profiles (
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- Agent templates (Eleanor, Marcus, Sage, Felix, etc.)
+-- Agent templates
 CREATE TABLE public.agent_templates (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   name TEXT NOT NULL,
@@ -25,6 +25,8 @@ CREATE TABLE public.agent_templates (
   backstory TEXT NOT NULL,
   personality_traits JSONB,
   voice_id TEXT NOT NULL,
+  elevenlabs_agent_id TEXT,
+  languages TEXT[] DEFAULT ARRAY['en'],
   avatar_url TEXT,
   avatar_emoji TEXT,
   accent_color TEXT DEFAULT '#d4880a',
@@ -40,6 +42,7 @@ CREATE TABLE public.user_agents (
   custom_name TEXT,
   personality_overrides JSONB,
   custom_instructions TEXT,
+  voice_settings JSONB DEFAULT '{"speed": 1.0, "stability": 0.5, "similarityBoost": 0.75}',
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
