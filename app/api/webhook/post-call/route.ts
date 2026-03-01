@@ -39,11 +39,17 @@ export async function POST(req: NextRequest) {
   try {
     const rawBody = await req.text();
 
+    console.log("🔔 Post-call webhook HIT:", {
+      hasSignature: !!req.headers.get("elevenlabs-signature"),
+      hasSecret: !!WEBHOOK_SECRET,
+      bodyLength: rawBody.length,
+    });
+
     // HMAC signature validation (if secret is configured)
     if (WEBHOOK_SECRET) {
       const signature = req.headers.get("elevenlabs-signature");
       if (!verifyHmacSignature(rawBody, signature, WEBHOOK_SECRET)) {
-        console.error("❌ HMAC validation failed");
+        console.error("❌ HMAC validation failed — check ELEVENLABS_WEBHOOK_SECRET matches ElevenLabs config");
         return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
       }
     }
