@@ -6,10 +6,52 @@ const anthropic = process.env.ANTHROPIC_API_KEY
   ? new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
   : null;
 
+interface ElevenLabsTranscriptTurn {
+  role: "agent" | "user";
+  message: string;
+  time_in_call_secs?: number;
+}
+
+interface ElevenLabsWebhookPayload {
+  type: "post_call_transcription" | "post_call_audio" | "call_initiation_failure";
+  event_timestamp: number;
+  data: {
+    agent_id: string;
+    conversation_id: string;
+    status?: string;
+    transcript?: ElevenLabsTranscriptTurn[];
+    metadata?: {
+      call_duration_secs?: number;
+      start_time_unix_secs?: number;
+    };
+    analysis?: {
+      transcript_summary?: string;
+      call_successful?: string;
+    };
+    conversation_initiation_client_data?: {
+      dynamic_variables?: Record<string, string>;
+    };
+    failure_reason?: string;
+  };
+}
+
 export async function POST(req: NextRequest) {
   try {
-    const body = await req.json();
-    const { conversation_id, transcript, duration_seconds } = body;
+    const payload: ElevenLabsWebhookPayload = await req.json();
+
+    // Handle call initiation failures — log and return 200
+    if (payload.type === "call_initiation_failure") {
+      console.log("Call initiation failed:", payload.data.failure_reason, payload.data.conversation_id);
+      return NextResponse.json({ received: true });
+    }
+
+    // Only process transcription webhooks
+    if (payload.type !== "post_call_transcription") {
+      return NextResponse.json({ received: true });
+    }
+
+    const { data } = payload;
+    const { conversation_id, transcript, metadata, analysis } = data;
 
     if (!conversation_id) {
       return NextResponse.json({ error: "Missing conversation_id" }, { status: 400 });
@@ -17,7 +59,7 @@ export async function POST(req: NextRequest) {
 
     const supabase = await createServiceClient();
 
-    // Find the conversation record
+    // Find the conversation record by ElevenLabs conversation ID
     const { data: conversation, error: convError } = await supabase
       .from("conversations")
       .select("*")
@@ -25,41 +67,25 @@ export async function POST(req: NextRequest) {
       .single();
 
     if (convError || !conversation) {
+      console.error("Conversation not found for elevenlabs_conversation_id:", conversation_id);
       return NextResponse.json({ error: "Conversation not found" }, { status: 404 });
     }
 
-    const transcriptText = Array.isArray(transcript)
-      ? transcript.map((m: { role: string; content: string }) => `${m.role}: ${m.content}`).join("\n")
-      : JSON.stringify(transcript);
+    // Convert ElevenLabs transcript format to our format
+    const formattedTranscript = (transcript ?? []).map((turn) => ({
+      role: turn.role === "agent" ? "assistant" : "user",
+      content: turn.message,
+      timestamp: turn.time_in_call_secs,
+    }));
 
-    // Extract memories using Claude (skipped if no API key)
-    let memories: { content: string; category: string; importance: number }[] = [];
-    if (anthropic) {
-      try {
-        const memoryResponse = await anthropic.messages.create({
-          model: "claude-sonnet-4-20250514",
-          max_tokens: 500,
-          system: `Extract 3-5 key facts about the USER (not the AI) from this conversation transcript.
-Return ONLY a valid JSON array with no other text: [{"content": "fact about user", "category": "family|work|health|interests|other", "importance": 1-10}]
-Only include facts that would be meaningful to remember for future conversations.`,
-          messages: [{ role: "user", content: transcriptText }],
-        });
+    // Build plain text for Claude
+    const transcriptText = (transcript ?? [])
+      .map((t) => `${t.role === "agent" ? "Assistant" : "User"}: ${t.message}`)
+      .join("\n");
 
-        const rawText = memoryResponse.content[0].type === "text" ? memoryResponse.content[0].text : "[]";
-        const jsonMatch = rawText.match(/\[[\s\S]*\]/);
-        if (jsonMatch) {
-          memories = JSON.parse(jsonMatch[0]);
-        }
-      } catch (err) {
-        console.error("Memory extraction failed:", err);
-      }
-    } else {
-      console.warn("ANTHROPIC_API_KEY not set — skipping memory extraction");
-    }
-
-    // Generate summary using Claude (skipped if no API key)
-    let summary = "";
-    if (anthropic) {
+    // Use ElevenLabs summary if available, otherwise generate with Claude
+    let summary = analysis?.transcript_summary ?? "";
+    if (!summary && transcriptText && anthropic) {
       try {
         const summaryResponse = await anthropic.messages.create({
           model: "claude-sonnet-4-20250514",
@@ -71,13 +97,39 @@ Only include facts that would be meaningful to remember for future conversations
             },
           ],
         });
-        summary =
-          summaryResponse.content[0].type === "text"
-            ? summaryResponse.content[0].text
-            : "";
+        summary = summaryResponse.content[0].type === "text"
+          ? summaryResponse.content[0].text
+          : "";
       } catch (err) {
         console.error("Summary generation failed:", err);
       }
+    }
+
+    // Extract memories using Claude
+    let memories: { content: string; category: string; importance: number }[] = [];
+    if (transcriptText && anthropic) {
+      try {
+        const memoryResponse = await anthropic.messages.create({
+          model: "claude-sonnet-4-20250514",
+          max_tokens: 500,
+          system: `Extract 3-5 key facts about the USER (not the AI) from this conversation transcript.
+Return ONLY a valid JSON array with no other text: [{"content": "fact about user", "category": "family|work|health|interests|other", "importance": 1-10}]
+Only include facts that would be meaningful to remember for future conversations.`,
+          messages: [{ role: "user", content: transcriptText }],
+        });
+
+        const rawText = memoryResponse.content[0].type === "text"
+          ? memoryResponse.content[0].text
+          : "[]";
+        const jsonMatch = rawText.match(/\[[\s\S]*\]/);
+        if (jsonMatch) {
+          memories = JSON.parse(jsonMatch[0]);
+        }
+      } catch (err) {
+        console.error("Memory extraction failed:", err);
+      }
+    } else if (!anthropic) {
+      console.warn("ANTHROPIC_API_KEY not set — skipping memory extraction");
     }
 
     // Update conversation record
@@ -85,8 +137,8 @@ Only include facts that would be meaningful to remember for future conversations
       .from("conversations")
       .update({
         ended_at: new Date().toISOString(),
-        duration_seconds: duration_seconds ?? null,
-        transcript,
+        duration_seconds: metadata?.call_duration_secs ?? null,
+        transcript: formattedTranscript,
         summary,
       })
       .eq("id", conversation.id);
@@ -105,7 +157,9 @@ Only include facts that would be meaningful to remember for future conversations
       );
     }
 
-    return NextResponse.json({ success: true, memoriesSaved: memories.length });
+    console.log(`Webhook processed: conversation ${conversation_id}, memories saved: ${memories.length}`);
+    return NextResponse.json({ received: true, memoriesSaved: memories.length });
+
   } catch (err) {
     console.error("Webhook error:", err);
     return NextResponse.json(
