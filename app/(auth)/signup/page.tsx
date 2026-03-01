@@ -13,14 +13,25 @@ export default function SignupPage() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState(false);
+
+  const supabaseConfigured =
+    !!process.env.NEXT_PUBLIC_SUPABASE_URL &&
+    process.env.NEXT_PUBLIC_SUPABASE_URL !== "https://placeholder.supabase.co";
 
   async function handleSignup(e: React.FormEvent) {
     e.preventDefault();
+
+    if (!supabaseConfigured) {
+      setError("Supabase is not configured yet. Add your keys to .env.local and restart the dev server.");
+      return;
+    }
+
     setLoading(true);
     setError(null);
 
     const supabase = createClient();
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
@@ -31,9 +42,16 @@ export default function SignupPage() {
     if (error) {
       setError(error.message);
       setLoading(false);
-    } else {
+      return;
+    }
+
+    // If email confirmation is enabled, user won't have a session yet
+    if (data.session) {
       router.push("/dashboard");
       router.refresh();
+    } else {
+      setSuccess(true);
+      setLoading(false);
     }
   }
 
@@ -64,129 +82,137 @@ export default function SignupPage() {
             Solum
           </Link>
           <p className="mt-2 text-sm" style={{ color: "var(--muted)" }}>
-            Create your account
+            {success ? "Check your inbox" : "Create your account"}
           </p>
         </div>
 
-        <div
-          className="rounded-2xl p-8 relative overflow-hidden"
-          style={{
-            background: "var(--surface)",
-            border: "1px solid var(--border2)",
-          }}
-        >
+        {success ? (
+          /* ── Success state ── */
           <div
-            className="absolute top-0 left-0 right-0 h-0.5"
-            style={{
-              background: "linear-gradient(90deg, var(--amber), transparent)",
-              opacity: 0.5,
-            }}
-          />
-
-          <form onSubmit={handleSignup} className="flex flex-col gap-4">
-            <div className="flex flex-col gap-1.5">
-              <label
-                className="text-xs uppercase tracking-widest"
-                style={{ color: "var(--muted)" }}
-              >
-                Your Name
-              </label>
-              <input
-                type="text"
-                required
-                value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
-                placeholder="Jane Smith"
-                className="px-4 py-3 rounded-xl text-sm outline-none transition-all duration-200"
-                style={{
-                  background: "var(--surface2)",
-                  border: "1px solid var(--border2)",
-                  color: "var(--text)",
-                }}
-                onFocus={(e) => (e.currentTarget.style.borderColor = "var(--amber-m)")}
-                onBlur={(e) => (e.currentTarget.style.borderColor = "var(--border2)")}
-              />
-            </div>
-
-            <div className="flex flex-col gap-1.5">
-              <label
-                className="text-xs uppercase tracking-widest"
-                style={{ color: "var(--muted)" }}
-              >
-                Email
-              </label>
-              <input
-                type="email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="you@example.com"
-                className="px-4 py-3 rounded-xl text-sm outline-none transition-all duration-200"
-                style={{
-                  background: "var(--surface2)",
-                  border: "1px solid var(--border2)",
-                  color: "var(--text)",
-                }}
-                onFocus={(e) => (e.currentTarget.style.borderColor = "var(--amber-m)")}
-                onBlur={(e) => (e.currentTarget.style.borderColor = "var(--border2)")}
-              />
-            </div>
-
-            <div className="flex flex-col gap-1.5">
-              <label
-                className="text-xs uppercase tracking-widest"
-                style={{ color: "var(--muted)" }}
-              >
-                Password
-              </label>
-              <input
-                type="password"
-                required
-                minLength={6}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="Min. 6 characters"
-                className="px-4 py-3 rounded-xl text-sm outline-none transition-all duration-200"
-                style={{
-                  background: "var(--surface2)",
-                  border: "1px solid var(--border2)",
-                  color: "var(--text)",
-                }}
-                onFocus={(e) => (e.currentTarget.style.borderColor = "var(--amber-m)")}
-                onBlur={(e) => (e.currentTarget.style.borderColor = "var(--border2)")}
-              />
-            </div>
-
-            {error && (
-              <p
-                className="text-xs px-3 py-2 rounded-lg"
-                style={{
-                  background: "var(--rose-l)",
-                  border: "1px solid var(--rose-m)",
-                  color: "var(--rose)",
-                }}
-              >
-                {error}
-              </p>
-            )}
-
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full py-3 rounded-xl font-semibold text-sm transition-all duration-200 mt-2 disabled:opacity-60 disabled:cursor-not-allowed"
-              style={{ background: "var(--amber)", color: "var(--bg)" }}
+            className="rounded-2xl p-8 text-center relative overflow-hidden"
+            style={{ background: "var(--surface)", border: "1px solid var(--border2)" }}
+          >
+            <div
+              className="absolute top-0 left-0 right-0 h-0.5"
+              style={{ background: "linear-gradient(90deg, var(--green), transparent)", opacity: 0.6 }}
+            />
+            <p className="text-4xl mb-4">✉️</p>
+            <p className="text-base font-semibold mb-2" style={{ color: "var(--text)" }}>
+              Confirm your email
+            </p>
+            <p className="text-sm leading-relaxed" style={{ color: "var(--muted)" }}>
+              We sent a confirmation link to{" "}
+              <span style={{ color: "var(--amber)" }}>{email}</span>.{" "}
+              Click it to activate your account, then{" "}
+              <Link href="/login" style={{ color: "var(--amber)" }}>sign in</Link>.
+            </p>
+          </div>
+        ) : (
+          /* ── Signup form ── */
+          <>
+            <div
+              className="rounded-2xl p-8 relative overflow-hidden"
+              style={{ background: "var(--surface)", border: "1px solid var(--border2)" }}
             >
-              {loading ? "Creating account…" : "Create Account"}
-            </button>
-          </form>
-        </div>
+              <div
+                className="absolute top-0 left-0 right-0 h-0.5"
+                style={{ background: "linear-gradient(90deg, var(--amber), transparent)", opacity: 0.5 }}
+              />
 
-        <p className="text-center mt-4 text-sm" style={{ color: "var(--muted)" }}>
-          Already have an account?{" "}
-          <Link href="/login" style={{ color: "var(--amber)" }}>
-            Sign in
-          </Link>
-        </p>
+              {!supabaseConfigured && (
+                <div
+                  className="text-xs px-3 py-2 rounded-lg mb-4"
+                  style={{
+                    background: "rgba(212,136,10,0.08)",
+                    border: "1px solid var(--amber-m)",
+                    color: "var(--amber)",
+                  }}
+                >
+                  ⚠ Supabase not configured — add keys to <code>.env.local</code> to enable sign up.
+                </div>
+              )}
+
+              <form onSubmit={handleSignup} className="flex flex-col gap-4">
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs uppercase tracking-widest" style={{ color: "var(--muted)" }}>
+                    Your Name
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
+                    placeholder="Jane Smith"
+                    className="px-4 py-3 rounded-xl text-sm outline-none transition-all duration-200"
+                    style={{ background: "var(--surface2)", border: "1px solid var(--border2)", color: "var(--text)" }}
+                    onFocus={(e) => (e.currentTarget.style.borderColor = "var(--amber-m)")}
+                    onBlur={(e) => (e.currentTarget.style.borderColor = "var(--border2)")}
+                  />
+                </div>
+
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs uppercase tracking-widest" style={{ color: "var(--muted)" }}>
+                    Email
+                  </label>
+                  <input
+                    type="email"
+                    required
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="you@example.com"
+                    className="px-4 py-3 rounded-xl text-sm outline-none transition-all duration-200"
+                    style={{ background: "var(--surface2)", border: "1px solid var(--border2)", color: "var(--text)" }}
+                    onFocus={(e) => (e.currentTarget.style.borderColor = "var(--amber-m)")}
+                    onBlur={(e) => (e.currentTarget.style.borderColor = "var(--border2)")}
+                  />
+                </div>
+
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs uppercase tracking-widest" style={{ color: "var(--muted)" }}>
+                    Password
+                  </label>
+                  <input
+                    type="password"
+                    required
+                    minLength={6}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="Min. 6 characters"
+                    className="px-4 py-3 rounded-xl text-sm outline-none transition-all duration-200"
+                    style={{ background: "var(--surface2)", border: "1px solid var(--border2)", color: "var(--text)" }}
+                    onFocus={(e) => (e.currentTarget.style.borderColor = "var(--amber-m)")}
+                    onBlur={(e) => (e.currentTarget.style.borderColor = "var(--border2)")}
+                  />
+                </div>
+
+                {error && (
+                  <p
+                    className="text-xs px-3 py-2 rounded-lg"
+                    style={{ background: "var(--rose-l)", border: "1px solid var(--rose-m)", color: "var(--rose)" }}
+                  >
+                    {error}
+                  </p>
+                )}
+
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full py-3 rounded-xl font-semibold text-sm transition-all duration-200 mt-2 disabled:opacity-60 disabled:cursor-not-allowed"
+                  style={{ background: "var(--amber)", color: "var(--bg)" }}
+                >
+                  {loading ? "Creating account…" : "Create Account"}
+                </button>
+              </form>
+            </div>
+
+            <p className="text-center mt-4 text-sm" style={{ color: "var(--muted)" }}>
+              Already have an account?{" "}
+              <Link href="/login" style={{ color: "var(--amber)" }}>
+                Sign in
+              </Link>
+            </p>
+          </>
+        )}
       </div>
     </div>
   );
