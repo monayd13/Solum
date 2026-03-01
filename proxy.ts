@@ -23,8 +23,8 @@ export async function proxy(req: NextRequest) {
   );
 
   const {
-    data: { session },
-  } = await supabase.auth.getSession();
+    data: { user },
+  } = await supabase.auth.getUser();
 
   const { pathname } = req.nextUrl;
 
@@ -32,7 +32,7 @@ export async function proxy(req: NextRequest) {
   const protectedPaths = ["/dashboard", "/call"];
   const isProtected = protectedPaths.some((p) => pathname.startsWith(p));
 
-  if (isProtected && !session) {
+  if (isProtected && !user) {
     const loginUrl = req.nextUrl.clone();
     loginUrl.pathname = "/login";
     return NextResponse.redirect(loginUrl);
@@ -42,7 +42,7 @@ export async function proxy(req: NextRequest) {
   const authPaths = ["/login", "/signup"];
   const isAuthPage = authPaths.some((p) => pathname.startsWith(p));
 
-  if (isAuthPage && session) {
+  if (isAuthPage && user) {
     const dashUrl = req.nextUrl.clone();
     dashUrl.pathname = "/dashboard";
     return NextResponse.redirect(dashUrl);
