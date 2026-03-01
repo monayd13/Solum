@@ -4,6 +4,15 @@ import Anthropic from "@anthropic-ai/sdk";
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
+export async function GET() {
+  return NextResponse.json({
+    message: "ElevenLabs Post-Call Webhook Endpoint",
+    method: "POST",
+    status: "ready",
+    timestamp: new Date().toISOString(),
+  });
+}
+
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
