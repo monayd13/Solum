@@ -11,18 +11,20 @@ const COMPANIONS = [
     tagline: "The Ambitious Achiever",
     color: "#c06800",
     colorLight: "#fff3e0",
+    avatarUrl: "/companions/maya.png",
     shortBio: "A driven marketing manager who balances ambition with self-awareness. She understands the pressure of high expectations.",
     bestFor: ["Career & ambition", "Goal-setting", "Redefining success"],
   },
   {
-    id: "mateo",
-    emoji: "�",
-    name: "Mateo Rivera",
-    tagline: "The Grounded Builder",
-    color: "#0a6878",
-    colorLight: "#e8f8fc",
-    shortBio: "A bilingual carpenter methodically building toward his dream of owning a custom furniture workshop. Grounded, patient, proud.",
-    bestFor: ["Practical advice", "Patience", "Building dreams"],
+    id: "jimmy",
+    emoji: "🕊️",
+    name: "Jimmy Carter",
+    tagline: "The Compassionate Statesman",
+    color: "#8b4513",
+    colorLight: "#f4e8d0",
+    avatarUrl: "/companions/jimmy.png",
+    shortBio: "A humble leader who believes in the power of service, diplomacy, and building bridges between people through compassion and understanding.",
+    bestFor: ["Service & leadership", "Conflict resolution", "Wisdom & perspective"],
   },
   {
     id: "claire",
@@ -31,16 +33,18 @@ const COMPANIONS = [
     tagline: "The Thoughtful Guide",
     color: "#126838",
     colorLight: "#edf9f3",
+    avatarUrl: "/companions/claire.png",
     shortBio: "A warm educator who connects past and present through context and pattern recognition. She listens deeply.",
     bestFor: ["Being heard", "Finding perspective", "Life meaning"],
   },
   {
     id: "daniel",
-    emoji: "�",
+    emoji: "🌱",
     name: "Daniel Mercer",
     tagline: "The Steady Mentor",
     color: "#5018a0",
     colorLight: "#f3eeff",
+    avatarUrl: "/companions/daniel.png",
     shortBio: "A calm, systems-thinking scientist who approaches both work and life with patience and accountability. Family-first.",
     bestFor: ["Long-term thinking", "Work pressure", "Calm & grounding"],
   },
@@ -61,8 +65,17 @@ export function CompanionShowcase() {
     }
     const audio = new Audio(`/audio/${companionId}-sample.mp3`);
     audioRef.current = audio;
-    audio.play().catch(() => {});
     setPlayingId(companionId);
+    
+    // Handle audio loading and playing errors
+    audio.addEventListener('error', () => {
+      setPlayingId(null);
+    });
+    
+    audio.play().catch(() => {
+      setPlayingId(null);
+    });
+    
     audio.onended = () => setPlayingId(null);
   }
 
@@ -95,10 +108,13 @@ export function CompanionShowcase() {
                 background: "var(--surface)",
                 border: "1px solid var(--border2)",
                 borderTop: `3px solid ${c.color}`,
-                borderRadius: "20px", padding: "28px 20px 20px",
+                borderRadius: "20px", 
                 display: "flex", flexDirection: "column", gap: "0",
-                transition: "transform 0.3s, box-shadow 0.3s",
+                transition: "all 0.3s",
                 animationDelay: `${i * 0.08}s`,
+                position: "relative",
+                overflow: "hidden",
+                height: "320px", // Fixed height for consistent layout
               }}
               onMouseEnter={e => {
                 (e.currentTarget as HTMLElement).style.transform = "translateY(-6px)";
@@ -109,78 +125,113 @@ export function CompanionShowcase() {
                 (e.currentTarget as HTMLElement).style.boxShadow = "none";
               }}
             >
-              {/* Avatar */}
+              {/* Image covering top half */}
               <div style={{
-                width: "68px", height: "68px", borderRadius: "50%",
-                background: c.colorLight,
-                border: `2px solid ${c.color}35`,
-                display: "flex", alignItems: "center", justifyContent: "center",
-                fontSize: "30px", margin: "0 auto 16px",
+                position: "absolute", top: 0, left: 0, right: 0, height: "60%",
+                overflow: "hidden",
               }}>
-                {c.emoji}
+                <img
+                  src={c.avatarUrl}
+                  alt={c.name}
+                  style={{
+                    width: "100%", height: "100%", objectFit: "cover", objectPosition: "center top",
+                  }}
+                  onError={(e) => {
+                    // Show fallback emoji on error
+                    (e.currentTarget as HTMLImageElement).style.display = "none";
+                    const parent = (e.currentTarget as HTMLImageElement).parentElement;
+                    if (parent) {
+                      parent.innerHTML = `<div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background: ${c.colorLight}; font-size: 48px;">${c.emoji}</div>`;
+                    }
+                  }}
+                />
+                {/* Fade overlay */}
+                <div style={{
+                  position: "absolute", bottom: 0, left: 0, right: 0, height: "40px",
+                  background: `linear-gradient(to bottom, transparent 0%, var(--surface) 100%)`,
+                }} />
               </div>
 
-              {/* Name + tagline */}
-              <div style={{ textAlign: "center", marginBottom: "12px" }}>
-                <h3 style={{
-                  fontFamily: "var(--font-cormorant)", fontSize: "22px",
-                  fontWeight: 600, color: c.color, margin: "0 0 4px",
-                }}>
-                  {c.name}
-                </h3>
-                <p style={{ fontSize: "10px", letterSpacing: "2px", textTransform: "uppercase", color: "var(--muted)", margin: 0 }}>
-                  {c.tagline}
-                </p>
+              {/* Content in bottom section */}
+              <div style={{
+                position: "absolute", bottom: 0, left: 0, right: 0, height: "40%",
+                padding: "12px 16px 16px",
+                display: "flex", flexDirection: "column", justifyContent: "space-between",
+                textAlign: "center",
+              }}>
+                <div>
+                  {/* Name */}
+                  <h3 style={{
+                    fontFamily: "var(--font-cormorant)", fontSize: "18px",
+                    fontWeight: 600, color: c.color, margin: "0 0 4px",
+                  }}>
+                    {c.name}
+                  </h3>
+
+                  {/* Best for */}
+                  <p style={{ fontSize: "10px", color: "var(--muted)", margin: 0, lineHeight: "1.3" }}>
+                    <span style={{ color: c.color, fontWeight: 600 }}>Best for:</span><br/>
+                    {c.bestFor.join(" • ")}
+                  </p>
+                </div>
+
+                {/* Voice preview button */}
+                <button
+                  onClick={() => playVoiceSample(c.id)}
+                  style={{
+                    width: "100%", padding: "8px",
+                    borderRadius: "8px", border: `1.5px solid ${c.color}`,
+                    background: playingId === c.id ? c.color : "transparent",
+                    color: playingId === c.id ? "var(--bg)" : c.color,
+                    fontSize: "11px", fontWeight: 600, cursor: "pointer",
+                    display: "flex", alignItems: "center", justifyContent: "center", gap: "6px",
+                    transition: "all 0.2s",
+                    fontFamily: "var(--font-dm-sans)",
+                    marginTop: "8px",
+                  }}
+                >
+                  {playingId === c.id ? (
+                    <>
+                      <span style={{ width: "6px", height: "6px", borderRadius: "50%", background: "var(--bg)", animation: "pulse 1s infinite" }} />
+                      Playing...
+                    </>
+                  ) : (
+                    <>▶ Hear their voice</>
+                  )}
+                </button>
               </div>
 
-              {/* Bio */}
-              <p style={{ fontSize: "12px", color: "var(--muted)", lineHeight: "1.7", textAlign: "center", margin: "0 0 12px" }}>
-                {c.shortBio}
-              </p>
-
-              {/* Best for */}
-              <div style={{ marginBottom: "16px", textAlign: "center" }}>
-                <p style={{ fontSize: "10px", color: "var(--muted)", marginBottom: "6px" }}>
-                  <span style={{ color: c.color }}>Best for:</span>{" "}
-                  {c.bestFor.join(" · ")}
-                </p>
-              </div>
-
-              {/* Voice preview button */}
-              <button
-                onClick={() => playVoiceSample(c.id)}
-                style={{
-                  width: "100%", padding: "10px",
-                  borderRadius: "10px", border: `1.5px solid ${c.color}`,
-                  background: playingId === c.id ? c.color : "transparent",
-                  color: playingId === c.id ? "var(--bg)" : c.color,
-                  fontSize: "12px", fontWeight: 600, cursor: "pointer",
-                  display: "flex", alignItems: "center", justifyContent: "center", gap: "7px",
-                  transition: "all 0.2s",
-                  fontFamily: "var(--font-dm-sans)",
-                  marginBottom: "8px",
-                }}
+              {/* Hover details overlay */}
+              <div style={{
+                position: "absolute", top: 0, left: 0, right: 0, bottom: 0,
+                background: `linear-gradient(to bottom, ${c.color}dd 0%, ${c.color}ee 100%)`,
+                backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)",
+                display: "flex", flexDirection: "column", justifyContent: "center",
+                padding: "20px", opacity: 0, transition: "opacity 0.3s",
+                pointerEvents: "none",
+              }}
+              onMouseEnter={e => {
+                (e.currentTarget as HTMLElement).style.opacity = "1";
+              }}
+              onMouseLeave={e => {
+                (e.currentTarget as HTMLElement).style.opacity = "0";
+              }}
               >
-                {playingId === c.id ? (
-                  <>
-                    <span style={{ width: "7px", height: "7px", borderRadius: "50%", background: "var(--bg)", animation: "pulse 1s infinite" }} />
-                    Playing...
-                  </>
-                ) : (
-                  <>▶ Hear their voice</>
-                )}
-              </button>
-
-              {/* CTA */}
-              <Link href="/signup" style={{
-                width: "100%", padding: "10px",
-                borderRadius: "10px", background: `${c.color}15`,
-                color: c.color, fontSize: "12px", fontWeight: 600,
-                textDecoration: "none", textAlign: "center",
-                display: "block", boxSizing: "border-box",
-              }}>
-                Add {c.name} →
-              </Link>
+                <div style={{
+                  background: "rgba(255,255,255,0.95)", borderRadius: "12px",
+                  padding: "16px", color: "var(--text)",
+                }}>
+                  <p style={{ fontSize: "11px", textTransform: "uppercase", letterSpacing: "2px", color: c.color, margin: "0 0 8px", fontWeight: 600 }}>
+                    {c.tagline}
+                  </p>
+                  <p style={{ fontSize: "12px", lineHeight: "1.6", margin: "0 0 12px" }}>
+                    {c.shortBio}
+                  </p>
+                  <div style={{ fontSize: "11px", opacity: 0.8 }}>
+                    <span style={{ fontWeight: 600, color: c.color }}>Perfect for:</span> {c.bestFor.join(", ")}
+                  </div>
+                </div>
+              </div>
             </div>
           ))}
         </div>
