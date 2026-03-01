@@ -245,40 +245,22 @@ function DiscoverCard({ template, onAdd, adding }: { template: AgentTemplate; on
 
 export default function DashboardPage() {
   const router = useRouter();
-  const [agents, setAgents] = useState<UserAgent[]>([]);
   const [profile, setProfile] = useState<UserProfile | null>(null);
-  const [templates, setTemplates] = useState<AgentTemplate[]>([]);
   const [loading, setLoading] = useState(true);
-  const [adding, setAdding] = useState(false);
 
-  useEffect(() => { loadData(); }, []);
-
-  async function loadData() {
+  useEffect(() => { 
     const supabase = createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-
-    const [{ data: profileData }, { data: agentsData }, { data: templatesData }] = await Promise.all([
-      supabase.from("profiles").select("*").eq("id", user.id).single(),
-      supabase.from("user_agents").select("*, template:agent_templates(*)").eq("user_id", user.id).order("created_at", { ascending: true }),
-      supabase.from("agent_templates").select("*").order("name"),
-    ]);
-
-    setProfile(profileData as UserProfile);
-    setAgents((agentsData as UserAgent[]) ?? []);
-    setTemplates((templatesData as AgentTemplate[]) ?? []);
-    setLoading(false);
-  }
-
-  async function handleAddAgent(templateId: string) {
-    setAdding(true);
-    const supabase = createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-    await supabase.from("user_agents").insert({ user_id: user.id, template_id: templateId });
-    await loadData();
-    setAdding(false);
-  }
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (user) {
+        supabase.from("profiles").select("*").eq("id", user.id).single().then(({ data: profileData }) => {
+          setProfile(profileData as UserProfile);
+          setLoading(false);
+        });
+      } else {
+        setLoading(false);
+      }
+    });
+  }, []);
 
   async function handleLogout() {
     const supabase = createClient();
@@ -287,8 +269,54 @@ export default function DashboardPage() {
     router.refresh();
   }
 
-  const addedTemplateIds = new Set(agents.map((a) => a.template_id));
-  const availableTemplates = templates.filter((t) => !addedTemplateIds.has(t.id));
+  // Static companions from landing page
+  const COMPANIONS = [
+    {
+      id: "maya",
+      emoji: "✨",
+      name: "Maya Thompson",
+      tagline: "The Ambitious Achiever",
+      color: "#c06800",
+      colorLight: "#fff3e0",
+      avatarUrl: "/companions/maya.png",
+      shortBio: "A driven marketing manager who balances ambition with self-awareness. She understands the pressure of high expectations.",
+      bestFor: ["Career & ambition", "Goal-setting", "Redefining success"],
+    },
+    {
+      id: "jimmy",
+      emoji: "🕊️",
+      name: "Jimmy Carter",
+      tagline: "The Compassionate Statesman",
+      color: "#8b4513",
+      colorLight: "#f4e8d0",
+      avatarUrl: "/companions/jimmy.png",
+      shortBio: "A humble leader who believes in the power of service, diplomacy, and building bridges between people through compassion and understanding.",
+      bestFor: ["Service & leadership", "Conflict resolution", "Wisdom & perspective"],
+    },
+    {
+      id: "claire",
+      emoji: "📚",
+      name: "Claire Donovan",
+      tagline: "The Thoughtful Guide",
+      color: "#126838",
+      colorLight: "#edf9f3",
+      avatarUrl: "/companions/claire.png",
+      shortBio: "A warm educator who connects past and present through context and pattern recognition. She listens deeply.",
+      bestFor: ["Being heard", "Finding perspective", "Life meaning"],
+    },
+    {
+      id: "daniel",
+      emoji: "🌱",
+      name: "Daniel Mercer",
+      tagline: "The Steady Mentor",
+      color: "#5018a0",
+      colorLight: "#f3eeff",
+      avatarUrl: "/companions/daniel.png",
+      shortBio: "A calm, systems-thinking scientist who approaches both work and life with patience and accountability. Family-first.",
+      bestFor: ["Long-term thinking", "Work pressure", "Calm & grounding"],
+    },
+  ];
+
   const firstName = profile?.full_name?.split(" ")[0] ?? "there";
   const memberSince = profile?.created_at
     ? new Date(profile.created_at).toLocaleDateString("en-US", { month: "long", year: "numeric" })
@@ -332,6 +360,84 @@ export default function DashboardPage() {
           </button>
         </div>
       </nav>
+
+      {/* ── Selected Companion Banner ── */}
+      <div style={{
+        background: "var(--surface)", border: "1px solid var(--border2)",
+        borderBottom: "1px solid var(--border)", padding: "20px 40px",
+      }}>
+        <div style={{ maxWidth: "1100px", margin: "0 auto" }}>
+          <div style={{
+            display: "flex", alignItems: "center", justifyContent: "space-between",
+            gap: "24px", flexWrap: "wrap",
+          }}>
+            {/* Selected Companion */}
+            <div style={{ display: "flex", alignItems: "center", gap: "16px", flex: 1, minWidth: "300px" }}>
+              <div style={{
+                width: "60px", height: "60px", borderRadius: "12px",
+                overflow: "hidden", border: "2px solid var(--amber)",
+                flexShrink: 0,
+              }}>
+                <img
+                  src="/companions/maya.png"
+                  alt="Maya Thompson"
+                  style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                />
+              </div>
+              <div style={{ flex: 1, minWidth: "0" }}>
+                <h3 style={{
+                  fontFamily: "var(--font-cormorant)", fontSize: "20px",
+                  fontWeight: 600, color: "var(--amber)", margin: "0 0 4px",
+                }}>
+                  Maya Thompson
+                </h3>
+                <p style={{ fontSize: "13px", color: "var(--muted)", margin: "0 0 8px" }}>
+                  The Ambitious Achiever
+                </p>
+                <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                  <span style={{ fontSize: "11px", color: "var(--muted)" }}>
+                    Last chat: 2 days ago
+                  </span>
+                  <span style={{ fontSize: "11px", color: "var(--amber)" }}>
+                    • 15 conversations
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div style={{ display: "flex", gap: "12px", flexShrink: 0 }}>
+              <button
+                onClick={() => router.push("/call/maya")}
+                style={{
+                  display: "flex", alignItems: "center", gap: "8px",
+                  padding: "12px 20px", borderRadius: "10px",
+                  background: "var(--amber)", color: "var(--bg)",
+                  border: "none", fontSize: "14px", fontWeight: 600,
+                  cursor: "pointer", transition: "all 0.2s",
+                  fontFamily: "var(--font-dm-sans)",
+                }}
+              >
+                <Phone size={16} />
+                Call Now
+              </button>
+              <button
+                style={{
+                  display: "flex", alignItems: "center", gap: "8px",
+                  padding: "12px 20px", borderRadius: "10px",
+                  background: "var(--surface2)", color: "var(--text)",
+                  border: "1.5px solid var(--border2)", fontSize: "14px", fontWeight: 600,
+                  cursor: "pointer", transition: "all 0.2s",
+                  fontFamily: "var(--font-dm-sans)",
+                }}
+              >
+                <MessageSquare size={16} />
+                View Chat
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
 
       <div style={{ maxWidth: "1100px", margin: "0 auto", padding: "40px 20px 80px" }}>
 
@@ -410,7 +516,7 @@ export default function DashboardPage() {
                 {/* Stats row */}
                 <div style={{ display: "flex", gap: "24px", flexShrink: 0 }}>
                   {[
-                    { icon: <Sparkles size={14} />, value: agents.length, label: "Companions" },
+                    { icon: <Sparkles size={14} />, value: COMPANIONS.length, label: "Companions" },
                     { icon: <MessageSquare size={14} />, value: "—", label: "Conversations" },
                     { icon: <Clock size={14} />, value: "—", label: "Call time" },
                   ].map(({ icon, value, label }) => (
@@ -427,44 +533,98 @@ export default function DashboardPage() {
             </div>
 
             {/* ── Your Companions ── */}
-            {agents.length > 0 && (
-              <section style={{ marginBottom: "48px" }}>
-                <div style={{ marginBottom: "20px" }}>
-                  <p style={{ fontSize: "11px", textTransform: "uppercase", letterSpacing: "1px", color: "var(--amber)", margin: "0 0 4px" }}>
-                    Your Companions
-                  </p>
-                  <h2 style={{ margin: 0, fontSize: "28px", fontWeight: 400, fontFamily: "var(--font-cormorant)", color: "var(--text)" }}>
-                    Who would you like to{" "}
-                    <em style={{ fontStyle: "italic", color: "var(--amber)" }}>talk to?</em>
-                  </h2>
-                </div>
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: "16px" }}>
-                  {agents.map((agent) => (
-                    <CompanionCard
-                      key={agent.id}
-                      agent={agent}
-                      onCall={() => router.push(`/call/${agent.id}`)}
-                    />
-                  ))}
-                </div>
-              </section>
-            )}
-
-            {/* ── Empty state ── */}
-            {agents.length === 0 && (
-              <div style={{
-                textAlign: "center", padding: "60px 24px", marginBottom: "48px",
-                background: "var(--surface)", border: "1px solid var(--border2)", borderRadius: "20px",
-              }}>
-                <div style={{ fontSize: "48px", marginBottom: "12px" }}>✨</div>
-                <p style={{ fontSize: "22px", fontFamily: "var(--font-cormorant)", color: "var(--text)", margin: "0 0 8px" }}>
-                  No companions yet
+            <section style={{ marginBottom: "48px" }}>
+              <div style={{ marginBottom: "20px" }}>
+                <p style={{ fontSize: "11px", textTransform: "uppercase", letterSpacing: "1px", color: "var(--amber)", margin: "0 0 4px" }}>
+                  Your Companions
                 </p>
-                <p style={{ fontSize: "14px", color: "var(--muted)", margin: 0 }}>
-                  Browse the companions below and add one to get started.
-                </p>
+                <h2 style={{ margin: 0, fontSize: "28px", fontWeight: 400, fontFamily: "var(--font-cormorant)", color: "var(--text)" }}>
+                  Who would you like to{" "}
+                  <em style={{ fontStyle: "italic", color: "var(--amber)" }}>talk to?</em>
+                </h2>
               </div>
-            )}
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "16px" }}>
+                {COMPANIONS.map((companion, i) => (
+                  <div
+                    key={companion.id}
+                    style={{
+                      background: "var(--surface)", border: "1px solid var(--border2)",
+                      borderTop: `3px solid ${companion.color}`,
+                      borderRadius: "20px", overflow: "hidden",
+                      position: "relative", height: "320px",
+                      transition: "all 0.3s", cursor: "pointer",
+                    }}
+                    onClick={() => router.push(`/call/${companion.id}`)}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.transform = "translateY(-6px)";
+                      e.currentTarget.style.boxShadow = `0 16px 50px ${companion.color}18`;
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.transform = "translateY(0)";
+                      e.currentTarget.style.boxShadow = "none";
+                    }}
+                  >
+                    {/* Image covering top half */}
+                    <div style={{
+                      position: "absolute", top: 0, left: 0, right: 0, height: "60%",
+                      overflow: "hidden",
+                    }}>
+                      <img
+                        src={companion.avatarUrl}
+                        alt={companion.name}
+                        style={{
+                          width: "100%", height: "100%", objectFit: "cover", objectPosition: "center top",
+                        }}
+                      />
+                      {/* Fade overlay */}
+                      <div style={{
+                        position: "absolute", bottom: 0, left: 0, right: 0, height: "40px",
+                        background: `linear-gradient(to bottom, transparent 0%, var(--surface) 100%)`,
+                      }} />
+                    </div>
+
+                    {/* Content in bottom section */}
+                    <div style={{
+                      position: "absolute", bottom: 0, left: 0, right: 0, height: "40%",
+                      padding: "12px 16px 16px",
+                      display: "flex", flexDirection: "column", justifyContent: "space-between",
+                      textAlign: "center",
+                    }}>
+                      <div>
+                        {/* Name */}
+                        <h3 style={{
+                          fontFamily: "var(--font-cormorant)", fontSize: "18px",
+                          fontWeight: 600, color: companion.color, margin: "0 0 4px",
+                        }}>
+                          {companion.name}
+                        </h3>
+
+                        {/* Best for */}
+                        <p style={{ fontSize: "10px", color: "var(--muted)", margin: 0, lineHeight: "1.3" }}>
+                          <span style={{ color: companion.color, fontWeight: 600 }}>Best for:</span><br/>
+                          {companion.bestFor.join(" • ")}
+                        </p>
+                      </div>
+
+                      {/* Call button */}
+                      <button
+                        style={{
+                          width: "100%", padding: "8px",
+                          borderRadius: "8px", border: `1.5px solid ${companion.color}`,
+                          background: "transparent", color: companion.color,
+                          fontSize: "11px", fontWeight: 600, cursor: "pointer",
+                          fontFamily: "var(--font-dm-sans)", marginTop: "8px",
+                          display: "flex", alignItems: "center", justifyContent: "center", gap: "6px",
+                        }}
+                      >
+                        <Phone size={10} />
+                        Start Call
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </section>
 
             {/* ── Mood Check-in + Memory ── */}
             <div style={{
@@ -477,36 +637,6 @@ export default function DashboardPage() {
               <MoodCheckIn />
               <MemoryCorner />
             </div>
-
-            {/* ── Discover Companions ── */}
-            {availableTemplates.length > 0 && (
-              <section>
-                <div style={{
-                  display: "flex", alignItems: "center", gap: "16px", marginBottom: "20px",
-                }}>
-                  <div style={{ flex: 1, height: "1px", background: "var(--border2)" }} />
-                  <div style={{ textAlign: "center" }}>
-                    <p style={{ fontSize: "11px", textTransform: "uppercase", letterSpacing: "1px", color: "var(--muted)", margin: 0 }}>
-                      Discover Companions
-                    </p>
-                  </div>
-                  <div style={{ flex: 1, height: "1px", background: "var(--border2)" }} />
-                </div>
-                <p style={{ fontSize: "13px", color: "var(--muted)", textAlign: "center", marginBottom: "24px", marginTop: "-8px" }}>
-                  Each companion has a rich backstory, unique personality, and will remember you across every conversation.
-                </p>
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: "16px" }}>
-                  {availableTemplates.map((template) => (
-                    <DiscoverCard
-                      key={template.id}
-                      template={template}
-                      onAdd={() => handleAddAgent(template.id)}
-                      adding={adding}
-                    />
-                  ))}
-                </div>
-              </section>
-            )}
           </>
         )}
       </div>
