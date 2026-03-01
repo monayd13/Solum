@@ -5,16 +5,14 @@ import { WaveformVisualizer } from "@/components/WaveformVisualizer";
 import { UserAgent } from "@/types";
 import { Phone, PhoneOff, ArrowLeft, Mic, MicOff } from "lucide-react";
 import Link from "next/link";
-import { useState } from "react";
 
 interface CallInterfaceProps {
   agent: UserAgent;
 }
 
 export function CallInterface({ agent }: CallInterfaceProps) {
-  const { status, connect, disconnect, isSpeaking, audioLevel, error } =
+  const { status, connect, disconnect, isSpeaking, audioLevel, error, isMuted, toggleMute } =
     useCall(agent.id);
-  const [muted, setMuted] = useState(false);
 
   const template = agent.template;
   const name = agent.custom_name || template?.name || "Unknown";
@@ -146,15 +144,15 @@ export function CallInterface({ agent }: CallInterfaceProps) {
         <div className="flex items-center gap-4">
           {status === "connected" && (
             <button
-              onClick={() => setMuted((m) => !m)}
+              onClick={toggleMute}
               className="w-12 h-12 rounded-full flex items-center justify-center transition-all duration-200"
               style={{
-                background: muted ? "var(--rose-l)" : "var(--surface2)",
-                border: `1px solid ${muted ? "var(--rose-m)" : "var(--border2)"}`,
-                color: muted ? "var(--rose)" : "var(--muted)",
+                background: isMuted ? "var(--rose-l)" : "var(--surface2)",
+                border: `1px solid ${isMuted ? "var(--rose-m)" : "var(--border2)"}`,
+                color: isMuted ? "var(--rose)" : "var(--muted)",
               }}
             >
-              {muted ? <MicOff size={16} /> : <Mic size={16} />}
+              {isMuted ? <MicOff size={16} /> : <Mic size={16} />}
             </button>
           )}
 

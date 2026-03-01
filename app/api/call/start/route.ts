@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { buildSystemPrompt } from "@/lib/agents/prompts";
-import { startConversation } from "@/lib/elevenlabs/client";
 import { UserAgent, UserProfile, Memory } from "@/types";
 
 export async function POST(req: NextRequest) {
@@ -58,28 +57,19 @@ export async function POST(req: NextRequest) {
       customInstructions: (agent as UserAgent).custom_instructions,
     });
 
-    // Start ElevenLabs conversation
-    const elevenLabsData = await startConversation({
-      agentId: process.env.ELEVENLABS_AGENT_ID!,
-      systemPrompt,
-      userId: user.id,
-      userAgentId: agentId,
-    });
-
-    // Create conversation record
+    // Create conversation record (ElevenLabs conversation ID linked later via /api/call/link)
     const { data: conversation } = await supabase
       .from("conversations")
       .insert({
         user_id: user.id,
         agent_id: agentId,
-        elevenlabs_conversation_id: elevenLabsData.conversation_id,
       })
       .select()
       .single();
 
     return NextResponse.json({
-      conversationId: conversation?.id,
-      websocketUrl: elevenLabsData.websocket_url,
+      conversationRecordId: conversation?.id,
+      systemPrompt,
     });
   } catch (err) {
     console.error("Error starting call:", err);

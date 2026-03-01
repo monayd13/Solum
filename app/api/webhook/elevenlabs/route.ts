@@ -2,7 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/server";
 import Anthropic from "@anthropic-ai/sdk";
 
-const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+const anthropic = process.env.ANTHROPIC_API_KEY
+  ? new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
+  : null;
 
 export async function POST(req: NextRequest) {
   try {
@@ -30,46 +32,52 @@ export async function POST(req: NextRequest) {
       ? transcript.map((m: { role: string; content: string }) => `${m.role}: ${m.content}`).join("\n")
       : JSON.stringify(transcript);
 
-    // Extract memories using Claude
+    // Extract memories using Claude (skipped if no API key)
     let memories: { content: string; category: string; importance: number }[] = [];
-    try {
-      const memoryResponse = await anthropic.messages.create({
-        model: "claude-opus-4-5",
-        max_tokens: 500,
-        system: `Extract 3-5 key facts about the USER (not the AI) from this conversation transcript.
+    if (anthropic) {
+      try {
+        const memoryResponse = await anthropic.messages.create({
+          model: "claude-sonnet-4-20250514",
+          max_tokens: 500,
+          system: `Extract 3-5 key facts about the USER (not the AI) from this conversation transcript.
 Return ONLY a valid JSON array with no other text: [{"content": "fact about user", "category": "family|work|health|interests|other", "importance": 1-10}]
 Only include facts that would be meaningful to remember for future conversations.`,
-        messages: [{ role: "user", content: transcriptText }],
-      });
+          messages: [{ role: "user", content: transcriptText }],
+        });
 
-      const rawText = memoryResponse.content[0].type === "text" ? memoryResponse.content[0].text : "[]";
-      const jsonMatch = rawText.match(/\[[\s\S]*\]/);
-      if (jsonMatch) {
-        memories = JSON.parse(jsonMatch[0]);
+        const rawText = memoryResponse.content[0].type === "text" ? memoryResponse.content[0].text : "[]";
+        const jsonMatch = rawText.match(/\[[\s\S]*\]/);
+        if (jsonMatch) {
+          memories = JSON.parse(jsonMatch[0]);
+        }
+      } catch (err) {
+        console.error("Memory extraction failed:", err);
       }
-    } catch (err) {
-      console.error("Memory extraction failed:", err);
+    } else {
+      console.warn("ANTHROPIC_API_KEY not set — skipping memory extraction");
     }
 
-    // Generate summary using Claude
+    // Generate summary using Claude (skipped if no API key)
     let summary = "";
-    try {
-      const summaryResponse = await anthropic.messages.create({
-        model: "claude-opus-4-5",
-        max_tokens: 200,
-        messages: [
-          {
-            role: "user",
-            content: `Summarize this conversation in 2-3 warm, personal sentences from the perspective of an AI companion recap:\n\n${transcriptText}`,
-          },
-        ],
-      });
-      summary =
-        summaryResponse.content[0].type === "text"
-          ? summaryResponse.content[0].text
-          : "";
-    } catch (err) {
-      console.error("Summary generation failed:", err);
+    if (anthropic) {
+      try {
+        const summaryResponse = await anthropic.messages.create({
+          model: "claude-sonnet-4-20250514",
+          max_tokens: 200,
+          messages: [
+            {
+              role: "user",
+              content: `Summarize this conversation in 2-3 warm, personal sentences from the perspective of an AI companion recap:\n\n${transcriptText}`,
+            },
+          ],
+        });
+        summary =
+          summaryResponse.content[0].type === "text"
+            ? summaryResponse.content[0].text
+            : "";
+      } catch (err) {
+        console.error("Summary generation failed:", err);
+      }
     }
 
     // Update conversation record

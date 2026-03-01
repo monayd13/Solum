@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
+import { Conversation } from "@elevenlabs/client";
 import { CallStatus } from "@/types";
 
 export function useCall(agentId: string) {
@@ -9,14 +10,28 @@ export function useCall(agentId: string) {
   const [audioLevel, setAudioLevel] = useState(0);
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [isMuted, setIsMuted] = useState(false);
 
-  const wsRef = useRef<WebSocket | null>(null);
-  const streamRef = useRef<MediaStream | null>(null);
-  const audioContextRef = useRef<AudioContext | null>(null);
-  const analyserRef = useRef<AnalyserNode | null>(null);
+  const conversationRef = useRef<Conversation | null>(null);
+  const conversationRecordIdRef = useRef<string | null>(null);
   const animFrameRef = useRef<number | null>(null);
 
-  const stopAudioLevel = useCallback(() => {
+  // Poll audio levels from SDK while connected
+  const startAudioLevelPolling = useCallback((conv: Conversation) => {
+    const tick = async () => {
+      try {
+        const output = await conv.getOutputVolume();
+        const input = await conv.getInputVolume();
+        setAudioLevel(Math.max(output, input));
+      } catch {
+        // conversation may have ended
+      }
+      animFrameRef.current = requestAnimationFrame(() => tick());
+    };
+    tick();
+  }, []);
+
+  const stopAudioLevelPolling = useCallback(() => {
     if (animFrameRef.current) {
       cancelAnimationFrame(animFrameRef.current);
       animFrameRef.current = null;
@@ -24,35 +39,12 @@ export function useCall(agentId: string) {
     setAudioLevel(0);
   }, []);
 
-  const startAudioLevelMonitor = useCallback((stream: MediaStream) => {
-    try {
-      const ctx = new AudioContext();
-      const analyser = ctx.createAnalyser();
-      analyser.fftSize = 256;
-      const source = ctx.createMediaStreamSource(stream);
-      source.connect(analyser);
-      audioContextRef.current = ctx;
-      analyserRef.current = analyser;
-
-      const dataArray = new Uint8Array(analyser.frequencyBinCount);
-
-      const tick = () => {
-        analyser.getByteFrequencyData(dataArray);
-        const avg = dataArray.reduce((a, b) => a + b, 0) / dataArray.length;
-        setAudioLevel(avg / 128);
-        animFrameRef.current = requestAnimationFrame(tick);
-      };
-      tick();
-    } catch {
-      // AudioContext not available
-    }
-  }, []);
-
   const connect = useCallback(async () => {
     setStatus("connecting");
     setError(null);
 
     try {
+      // 1. Get system prompt + conversation record from backend
       const res = await fetch("/api/call/start", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -64,71 +56,97 @@ export function useCall(agentId: string) {
         throw new Error(data.error || "Failed to start call");
       }
 
-      const { conversationId: convId, websocketUrl } = await res.json();
-      setConversationId(convId);
+      const { conversationRecordId, systemPrompt } = await res.json();
+      conversationRecordIdRef.current = conversationRecordId;
 
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      streamRef.current = stream;
-      startAudioLevelMonitor(stream);
+      // 2. Start ElevenLabs conversation via SDK
+      const elAgentId = process.env.NEXT_PUBLIC_ELEVENLABS_AGENT_ID!;
+      console.log("[ElevenLabs] Starting session with agentId:", elAgentId);
+      console.log("[ElevenLabs] System prompt length:", systemPrompt?.length);
+      const conversation = await Conversation.startSession({
+        agentId: elAgentId,
+        connectionType: "websocket",
+        onConnect: () => {
+          console.log("[ElevenLabs] Connected");
+          setStatus("connected");
+        },
+        onDisconnect: () => {
+          console.log("[ElevenLabs] Disconnected");
+          setStatus("idle");
+          setIsSpeaking(false);
+          stopAudioLevelPolling();
+          conversationRef.current = null;
+        },
+        onModeChange: ({ mode }) => {
+          console.log("[ElevenLabs] Mode:", mode);
+          setIsSpeaking(mode === "speaking");
+        },
+        onError: (err) => {
+          console.error("[ElevenLabs] Error:", err);
+          setError(typeof err === "string" ? err : "Connection error");
+          setStatus("error");
+          stopAudioLevelPolling();
+        },
+        onMessage: (msg) => {
+          console.log("[ElevenLabs] Message:", msg);
+        },
+        onStatusChange: (status) => {
+          console.log("[ElevenLabs] Status:", status);
+        },
+      });
 
-      const ws = new WebSocket(websocketUrl);
-      wsRef.current = ws;
+      conversationRef.current = conversation;
+      startAudioLevelPolling(conversation);
 
-      ws.onopen = () => {
-        setStatus("connected");
-      };
+      // 3. Link ElevenLabs conversation ID to Supabase record
+      const elConversationId = conversation.getId();
+      setConversationId(elConversationId);
 
-      ws.onclose = () => {
-        setStatus("idle");
-        setIsSpeaking(false);
-        stopAudioLevel();
-      };
-
-      ws.onerror = () => {
-        setStatus("error");
-        setError("Connection lost. Please try again.");
-        stopAudioLevel();
-      };
-
-      ws.onmessage = (event) => {
-        try {
-          const msg = JSON.parse(event.data);
-          if (msg.type === "audio") {
-            setIsSpeaking(true);
-            setTimeout(() => setIsSpeaking(false), 500);
-          }
-        } catch {
-          // binary audio data — agent is speaking
-          setIsSpeaking(true);
-          setTimeout(() => setIsSpeaking(false), 500);
-        }
-      };
-
-      // Stream microphone audio to ElevenLabs WebSocket
-      const mediaRecorder = new MediaRecorder(stream, { mimeType: "audio/webm" });
-      mediaRecorder.ondataavailable = (e) => {
-        if (ws.readyState === WebSocket.OPEN && e.data.size > 0) {
-          ws.send(e.data);
-        }
-      };
-      mediaRecorder.start(250);
+      if (conversationRecordIdRef.current && elConversationId) {
+        fetch("/api/call/link", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            conversationRecordId: conversationRecordIdRef.current,
+            elevenlabsConversationId: elConversationId,
+          }),
+        }).catch(console.error);
+      }
     } catch (err) {
       console.error("Call error:", err);
       setStatus("error");
       setError(err instanceof Error ? err.message : "Failed to connect");
-      stopAudioLevel();
-      streamRef.current?.getTracks().forEach((t) => t.stop());
+      stopAudioLevelPolling();
     }
-  }, [agentId, startAudioLevelMonitor, stopAudioLevel]);
+  }, [agentId, startAudioLevelPolling, stopAudioLevelPolling]);
 
-  const disconnect = useCallback(() => {
-    wsRef.current?.close();
-    streamRef.current?.getTracks().forEach((t) => t.stop());
-    audioContextRef.current?.close();
-    stopAudioLevel();
+  const disconnect = useCallback(async () => {
+    try {
+      await conversationRef.current?.endSession();
+    } catch {
+      // already disconnected
+    }
+    conversationRef.current = null;
+    stopAudioLevelPolling();
     setStatus("idle");
     setIsSpeaking(false);
-  }, [stopAudioLevel]);
+  }, [stopAudioLevelPolling]);
+
+  const toggleMute = useCallback(() => {
+    if (conversationRef.current) {
+      const newMuted = !isMuted;
+      conversationRef.current.setMicMuted(newMuted);
+      setIsMuted(newMuted);
+    }
+  }, [isMuted]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      conversationRef.current?.endSession().catch(() => {});
+      stopAudioLevelPolling();
+    };
+  }, [stopAudioLevelPolling]);
 
   return {
     status,
@@ -138,5 +156,7 @@ export function useCall(agentId: string) {
     audioLevel,
     conversationId,
     error,
+    isMuted,
+    toggleMute,
   };
 }
