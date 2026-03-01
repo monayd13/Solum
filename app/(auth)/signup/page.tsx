@@ -88,10 +88,12 @@ export default function SignupPage() {
         .from("profiles")
         .update({
           full_name: fullName,
+          email: email,
           phone: phone || null,
           age: age,
           dob: dob || null,
           gender: gender || null,
+          updated_at: new Date().toISOString(),
         })
         .eq("id", data.user.id);
     }
