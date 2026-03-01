@@ -3,8 +3,8 @@
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { ThemeToggle } from "@/components/ThemeToggle";
-import { UserProfile, UserAgent, VoiceSettings } from "@/types";
-import { ArrowLeft, Save, Check, RotateCcw } from "lucide-react";
+import { UserProfile, UserAgent, VoiceSettings, Memory } from "@/types";
+import { ArrowLeft, Save, Check, RotateCcw, Trash2, Brain, AlertTriangle } from "lucide-react";
 import Link from "next/link";
 
 function getAge(dobStr: string): number | null {
@@ -45,6 +45,12 @@ export default function SettingsPage() {
   // Voice settings per agent
   const [agentVoices, setAgentVoices] = useState<AgentVoiceState[]>([]);
 
+  // Memory management
+  const [agentMemories, setAgentMemories] = useState<{ agentId: string; name: string; emoji: string; color: string; count: number; memories: Memory[] }[]>([]);
+  const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState<string | null>(null);
+  const [totalMemoryCount, setTotalMemoryCount] = useState(0);
+
   useEffect(() => {
     loadData();
   }, []);
@@ -73,8 +79,9 @@ export default function SettingsPage() {
     }
 
     if (agentsData) {
+      const agents = agentsData as UserAgent[];
       setAgentVoices(
-        (agentsData as UserAgent[]).map((a) => ({
+        agents.map((a) => ({
           agent: a,
           speed: a.voice_settings?.speed ?? DEFAULT_VOICE.speed!,
           stability: a.voice_settings?.stability ?? DEFAULT_VOICE.stability!,
@@ -84,6 +91,35 @@ export default function SettingsPage() {
           dirty: false,
         }))
       );
+
+      // Load memory counts per agent
+      const memResults = await Promise.all(
+        agents.map((a) =>
+          supabase
+            .from("memories")
+            .select("*")
+            .eq("user_id", user.id)
+            .eq("agent_id", a.id)
+            .order("created_at", { ascending: false })
+        )
+      );
+
+      let total = 0;
+      const memData = agents.map((a, i) => {
+        const mems = (memResults[i].data ?? []) as Memory[];
+        total += mems.length;
+        const t = a.template;
+        return {
+          agentId: a.id,
+          name: a.custom_name || t?.name || "Agent",
+          emoji: t?.avatar_emoji || "🤖",
+          color: t?.accent_color || "var(--amber)",
+          count: mems.length,
+          memories: mems,
+        };
+      });
+      setAgentMemories(memData);
+      setTotalMemoryCount(total);
     }
 
     setLoading(false);
@@ -168,6 +204,63 @@ export default function SettingsPage() {
     }, 3000);
   }
 
+  async function deleteMemoriesForAgent(agentId: string) {
+    setDeleting(agentId);
+    const res = await fetch("/api/memories", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ agentId }),
+    });
+    if (res.ok) {
+      const { deleted } = await res.json();
+      setAgentMemories((prev) =>
+        prev.map((am) => (am.agentId === agentId ? { ...am, count: 0, memories: [] } : am))
+      );
+      setTotalMemoryCount((prev) => prev - deleted);
+    } else {
+      const data = await res.json();
+      setError(data.error || "Failed to delete memories");
+    }
+    setDeleting(null);
+    setConfirmDelete(null);
+  }
+
+  async function deleteAllMemories() {
+    setDeleting("all");
+    const res = await fetch("/api/memories", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ deleteAll: true }),
+    });
+    if (res.ok) {
+      setAgentMemories((prev) => prev.map((am) => ({ ...am, count: 0, memories: [] })));
+      setTotalMemoryCount(0);
+    } else {
+      const data = await res.json();
+      setError(data.error || "Failed to delete memories");
+    }
+    setDeleting(null);
+    setConfirmDelete(null);
+  }
+
+  async function deleteSingleMemory(memoryId: string, agentId: string) {
+    const res = await fetch("/api/memories", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ memoryId }),
+    });
+    if (res.ok) {
+      setAgentMemories((prev) =>
+        prev.map((am) =>
+          am.agentId === agentId
+            ? { ...am, count: am.count - 1, memories: am.memories.filter((m) => m.id !== memoryId) }
+            : am
+        )
+      );
+      setTotalMemoryCount((prev) => prev - 1);
+    }
+  }
+
   const hasChanges =
     profile &&
     (fullName !== (profile.full_name || "") ||
@@ -217,23 +310,23 @@ export default function SettingsPage() {
         <ThemeToggle />
       </nav>
 
-      <div style={{ maxWidth: "480px", margin: "0 auto", padding: "48px 20px 80px" }}>
+      <div style={{ maxWidth: "960px", margin: "0 auto", padding: "48px 20px 80px" }}>
         {/* Header */}
         <div style={{ marginBottom: "32px" }}>
           <p style={{
             fontSize: "11px", textTransform: "uppercase", letterSpacing: "1.5px",
             color: "var(--amber)", marginBottom: "8px",
           }}>
-            Profile Settings
+            Settings
           </p>
           <h1 style={{
             fontFamily: "var(--font-cormorant)", fontSize: "32px",
             fontWeight: 300, color: "var(--text)", margin: 0,
           }}>
-            Your <em style={{ color: "var(--amber)", fontStyle: "italic" }}>details</em>
+            Your <em style={{ color: "var(--amber)", fontStyle: "italic" }}>companions</em>
           </h1>
           <p style={{ fontSize: "13px", color: "var(--muted)", marginTop: "8px" }}>
-            This information helps your companions personalize conversations.
+            Customize how your companions sound and manage what they remember.
           </p>
         </div>
 
@@ -247,175 +340,21 @@ export default function SettingsPage() {
           </div>
         ) : (
           <>
-          <form onSubmit={handleSave}>
+          {/* Error */}
+          {error && (
             <div style={{
-              background: "var(--surface)", border: "1px solid var(--border2)",
-              borderRadius: "16px", overflow: "hidden",
+              marginBottom: "16px", padding: "10px 16px", borderRadius: "12px",
+              background: "var(--rose-l)", border: "1px solid var(--rose-m)",
+              color: "var(--rose)", fontSize: "13px",
             }}>
-              {/* Accent bar */}
-              <div style={{
-                height: "2px",
-                background: "linear-gradient(90deg, var(--amber), transparent)",
-                opacity: 0.5,
-              }} />
-
-              <div style={{ padding: "28px", display: "flex", flexDirection: "column", gap: "20px" }}>
-
-                {/* Section: Personal */}
-                <p style={{
-                  fontSize: "11px", textTransform: "uppercase", letterSpacing: "1.2px",
-                  color: "var(--muted)", margin: 0,
-                }}>
-                  Personal Info
-                </p>
-
-                {/* Full Name */}
-                <div style={{ display: "flex", flexDirection: "column" }}>
-                  <label style={labelStyle}>Full Name</label>
-                  <input
-                    type="text"
-                    value={fullName}
-                    onChange={(e) => setFullName(e.target.value)}
-                    placeholder="Jane Smith"
-                    style={inputStyle}
-                    onFocus={(e) => (e.currentTarget.style.borderColor = "var(--amber-m)")}
-                    onBlur={(e) => (e.currentTarget.style.borderColor = "var(--border2)")}
-                  />
-                </div>
-
-                {/* DOB + Gender row */}
-                <div style={{ display: "flex", gap: "12px" }}>
-                  <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
-                    <label style={labelStyle}>Date of Birth</label>
-                    <input
-                      type="date"
-                      value={dob}
-                      max={new Date().toISOString().split("T")[0]}
-                      onChange={(e) => setDob(e.target.value)}
-                      style={{ ...inputStyle, colorScheme: "dark" }}
-                      onFocus={(e) => (e.currentTarget.style.borderColor = "var(--amber-m)")}
-                      onBlur={(e) => (e.currentTarget.style.borderColor = "var(--border2)")}
-                    />
-                    {dob && (
-                      <span style={{ fontSize: "11px", color: "var(--muted)", marginTop: "4px" }}>
-                        Age: {getAge(dob)}
-                      </span>
-                    )}
-                  </div>
-                  <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
-                    <label style={labelStyle}>Gender</label>
-                    <select
-                      value={gender}
-                      onChange={(e) => setGender(e.target.value)}
-                      style={{ ...inputStyle, appearance: "none" }}
-                      onFocus={(e) => (e.currentTarget.style.borderColor = "var(--amber-m)")}
-                      onBlur={(e) => (e.currentTarget.style.borderColor = "var(--border2)")}
-                    >
-                      <option value="">Prefer not to say</option>
-                      <option value="female">Female</option>
-                      <option value="male">Male</option>
-                      <option value="non-binary">Non-binary</option>
-                      <option value="other">Other</option>
-                    </select>
-                  </div>
-                </div>
-
-                {/* Section: Contact */}
-                <p style={{
-                  fontSize: "11px", textTransform: "uppercase", letterSpacing: "1.2px",
-                  color: "var(--muted)", margin: "8px 0 0 0",
-                }}>
-                  Contact
-                </p>
-
-                {/* Phone */}
-                <div style={{ display: "flex", flexDirection: "column" }}>
-                  <label style={labelStyle}>
-                    Phone <span style={{ fontWeight: 400 }}>(optional)</span>
-                  </label>
-                  <input
-                    type="tel"
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    placeholder="+1 555 000 0000"
-                    style={inputStyle}
-                    onFocus={(e) => (e.currentTarget.style.borderColor = "var(--amber-m)")}
-                    onBlur={(e) => (e.currentTarget.style.borderColor = "var(--border2)")}
-                  />
-                </div>
-
-                {/* Context preview */}
-                <div style={{
-                  background: "var(--surface2)", borderRadius: "12px",
-                  padding: "16px", border: "1px solid var(--border2)",
-                }}>
-                  <p style={{
-                    fontSize: "11px", textTransform: "uppercase", letterSpacing: "1.2px",
-                    color: "var(--amber)", marginBottom: "8px",
-                  }}>
-                    What your companions will know
-                  </p>
-                  <p style={{ fontSize: "13px", color: "var(--text)", lineHeight: "1.6", margin: 0 }}>
-                    {fullName ? `Name: ${fullName}` : "Name: not set"}
-                    {dob ? `  ·  Age: ${getAge(dob)}` : ""}
-                    {gender ? `  ·  Gender: ${gender}` : ""}
-                  </p>
-                </div>
-              </div>
+              {error}
             </div>
+          )}
 
-            {/* Error */}
-            {error && (
-              <div style={{
-                marginTop: "16px", padding: "10px 16px", borderRadius: "12px",
-                background: "var(--rose-l)", border: "1px solid var(--rose-m)",
-                color: "var(--rose)", fontSize: "13px",
-              }}>
-                {error}
-              </div>
-            )}
-
-            {/* Save button */}
-            <button
-              type="submit"
-              disabled={saving || !hasChanges}
-              style={{
-                marginTop: "20px", width: "100%", padding: "14px",
-                borderRadius: "12px", border: "none", cursor: hasChanges ? "pointer" : "not-allowed",
-                fontWeight: 600, fontSize: "14px", fontFamily: "inherit",
-                background: saved ? "var(--green)" : hasChanges ? "var(--amber)" : "var(--surface2)",
-                color: saved || hasChanges ? "var(--bg)" : "var(--muted)",
-                opacity: saving ? 0.6 : 1,
-                transition: "all 0.2s",
-                display: "flex", alignItems: "center", justifyContent: "center", gap: "8px",
-              }}
-            >
-              {saving ? (
-                <>
-                  <span style={{
-                    width: "16px", height: "16px", borderRadius: "50%",
-                    border: "2px solid currentColor", borderTopColor: "transparent",
-                    animation: "spin 0.8s linear infinite", display: "inline-block",
-                  }} />
-                  Saving…
-                </>
-              ) : saved ? (
-                <>
-                  <Check size={16} />
-                  Saved
-                </>
-              ) : (
-                <>
-                  <Save size={16} />
-                  Save Changes
-                </>
-              )}
-            </button>
-          </form>
-
+          <div style={{ display: "flex", gap: "24px", flexWrap: "wrap" }}>
           {/* Voice Settings per Agent */}
           {agentVoices.length > 0 && (
-            <div style={{ marginTop: "40px" }}>
+            <div style={{ flex: 1, minWidth: "300px" }}>
               <div style={{ marginBottom: "24px" }}>
                 <p style={{
                   fontSize: "11px", textTransform: "uppercase", letterSpacing: "1.5px",
@@ -587,6 +526,239 @@ export default function SettingsPage() {
               })}
             </div>
           )}
+
+          {/* Memory Management */}
+          <div style={{ flex: 1, minWidth: "300px" }}>
+            <div style={{ marginBottom: "24px" }}>
+              <p style={{
+                fontSize: "11px", textTransform: "uppercase", letterSpacing: "1.5px",
+                color: "var(--teal)", marginBottom: "8px",
+              }}>
+                Memory Management
+              </p>
+              <h2 style={{
+                fontFamily: "var(--font-cormorant)", fontSize: "26px",
+                fontWeight: 300, color: "var(--text)", margin: 0,
+              }}>
+                What they <em style={{ color: "var(--teal)", fontStyle: "italic" }}>remember</em>
+              </h2>
+              <p style={{ fontSize: "13px", color: "var(--muted)", marginTop: "6px" }}>
+                Your companions learn from conversations. You can delete memories anytime — no judgment.
+              </p>
+            </div>
+
+            {/* Total summary */}
+            <div style={{
+              background: "var(--surface)", border: "1px solid var(--border2)",
+              borderRadius: "16px", padding: "20px 24px", marginBottom: "16px",
+              display: "flex", alignItems: "center", justifyContent: "space-between",
+            }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                <div style={{
+                  width: "40px", height: "40px", borderRadius: "50%",
+                  background: "var(--teal-l)", border: "1px solid var(--teal-m)",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                }}>
+                  <Brain size={18} color="var(--teal)" />
+                </div>
+                <div>
+                  <p style={{ fontSize: "14px", color: "var(--text)", margin: 0, fontWeight: 500 }}>
+                    {totalMemoryCount} {totalMemoryCount === 1 ? "memory" : "memories"} total
+                  </p>
+                  <p style={{ fontSize: "12px", color: "var(--muted)", margin: 0 }}>
+                    Across {agentMemories.filter((a) => a.count > 0).length} companion{agentMemories.filter((a) => a.count > 0).length !== 1 ? "s" : ""}
+                  </p>
+                </div>
+              </div>
+
+              {totalMemoryCount > 0 && (
+                confirmDelete === "all" ? (
+                  <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                    <span style={{ fontSize: "12px", color: "var(--rose)" }}>Delete all?</span>
+                    <button
+                      onClick={deleteAllMemories}
+                      disabled={deleting === "all"}
+                      style={{
+                        padding: "6px 12px", borderRadius: "8px", border: "none",
+                        background: "var(--rose)", color: "var(--bg)",
+                        fontSize: "12px", fontWeight: 600, fontFamily: "inherit", cursor: "pointer",
+                        opacity: deleting === "all" ? 0.6 : 1,
+                      }}
+                    >
+                      {deleting === "all" ? "Deleting…" : "Yes, delete all"}
+                    </button>
+                    <button
+                      onClick={() => setConfirmDelete(null)}
+                      style={{
+                        padding: "6px 12px", borderRadius: "8px",
+                        border: "1px solid var(--border2)", background: "transparent",
+                        color: "var(--muted)", fontSize: "12px", fontFamily: "inherit", cursor: "pointer",
+                      }}
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => setConfirmDelete("all")}
+                    style={{
+                      padding: "8px 14px", borderRadius: "8px",
+                      border: "1px solid var(--rose-m)", background: "var(--rose-l)",
+                      color: "var(--rose)", fontSize: "12px", fontFamily: "inherit", cursor: "pointer",
+                      display: "flex", alignItems: "center", gap: "6px",
+                    }}
+                  >
+                    <Trash2 size={12} />
+                    Delete All
+                  </button>
+                )
+              )}
+            </div>
+
+            {/* Per-agent memories */}
+            {agentMemories.map((am) => (
+              <div
+                key={am.agentId}
+                style={{
+                  background: "var(--surface)", border: "1px solid var(--border2)",
+                  borderRadius: "16px", overflow: "hidden", marginBottom: "12px",
+                }}
+              >
+                <div style={{
+                  height: "2px",
+                  background: `linear-gradient(90deg, ${am.color}, transparent)`,
+                  opacity: 0.5,
+                }} />
+
+                {/* Agent header + delete */}
+                <div style={{
+                  padding: "16px 24px", display: "flex", alignItems: "center",
+                  justifyContent: "space-between",
+                }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                    <span style={{ fontSize: "20px" }}>{am.emoji}</span>
+                    <div>
+                      <p style={{
+                        fontFamily: "var(--font-cormorant)", fontSize: "16px",
+                        fontWeight: 600, color: am.color, margin: 0,
+                      }}>
+                        {am.name}
+                      </p>
+                      <p style={{ fontSize: "11px", color: "var(--muted)", margin: 0 }}>
+                        {am.count} {am.count === 1 ? "memory" : "memories"}
+                      </p>
+                    </div>
+                  </div>
+
+                  {am.count > 0 && (
+                    confirmDelete === am.agentId ? (
+                      <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                        <button
+                          onClick={() => deleteMemoriesForAgent(am.agentId)}
+                          disabled={deleting === am.agentId}
+                          style={{
+                            padding: "5px 10px", borderRadius: "6px", border: "none",
+                            background: "var(--rose)", color: "var(--bg)",
+                            fontSize: "11px", fontWeight: 600, fontFamily: "inherit", cursor: "pointer",
+                            opacity: deleting === am.agentId ? 0.6 : 1,
+                          }}
+                        >
+                          {deleting === am.agentId ? "Deleting…" : "Confirm"}
+                        </button>
+                        <button
+                          onClick={() => setConfirmDelete(null)}
+                          style={{
+                            padding: "5px 10px", borderRadius: "6px",
+                            border: "1px solid var(--border2)", background: "transparent",
+                            color: "var(--muted)", fontSize: "11px", fontFamily: "inherit", cursor: "pointer",
+                          }}
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => setConfirmDelete(am.agentId)}
+                        style={{
+                          padding: "6px 10px", borderRadius: "6px",
+                          border: "1px solid var(--border2)", background: "transparent",
+                          color: "var(--muted)", fontSize: "11px", fontFamily: "inherit", cursor: "pointer",
+                          display: "flex", alignItems: "center", gap: "4px",
+                          transition: "all 0.2s",
+                        }}
+                      >
+                        <Trash2 size={11} />
+                        Clear all
+                      </button>
+                    )
+                  )}
+                </div>
+
+                {/* Memory list (collapsed, show up to 5) */}
+                {am.memories.length > 0 && (
+                  <div style={{
+                    padding: "0 24px 16px", display: "flex", flexDirection: "column", gap: "6px",
+                  }}>
+                    {am.memories.slice(0, 5).map((mem) => (
+                      <div
+                        key={mem.id}
+                        style={{
+                          display: "flex", alignItems: "flex-start", justifyContent: "space-between",
+                          gap: "10px", padding: "8px 12px", borderRadius: "8px",
+                          background: "var(--surface2)", border: "1px solid var(--border)",
+                        }}
+                      >
+                        <p style={{ fontSize: "12px", color: "var(--text)", lineHeight: "1.5", margin: 0, flex: 1 }}>
+                          {mem.content}
+                        </p>
+                        <button
+                          onClick={() => deleteSingleMemory(mem.id, am.agentId)}
+                          title="Delete this memory"
+                          style={{
+                            flexShrink: 0, width: "24px", height: "24px", borderRadius: "4px",
+                            border: "none", background: "transparent", color: "var(--muted2)",
+                            cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
+                            transition: "color 0.2s",
+                          }}
+                          onMouseEnter={(e) => (e.currentTarget.style.color = "var(--rose)")}
+                          onMouseLeave={(e) => (e.currentTarget.style.color = "var(--muted2)")}
+                        >
+                          <Trash2 size={12} />
+                        </button>
+                      </div>
+                    ))}
+                    {am.memories.length > 5 && (
+                      <p style={{ fontSize: "11px", color: "var(--muted)", textAlign: "center", margin: "4px 0 0" }}>
+                        + {am.memories.length - 5} more
+                      </p>
+                    )}
+                  </div>
+                )}
+
+                {am.count === 0 && (
+                  <div style={{ padding: "0 24px 16px" }}>
+                    <p style={{ fontSize: "12px", color: "var(--muted2)", fontStyle: "italic", margin: 0 }}>
+                      No memories yet — start a conversation to build them.
+                    </p>
+                  </div>
+                )}
+              </div>
+            ))}
+
+            {/* Reassurance */}
+            <div style={{
+              display: "flex", alignItems: "center", gap: "8px",
+              padding: "12px 16px", borderRadius: "12px",
+              background: "var(--green-l)", border: "1px solid var(--green-m)",
+              marginTop: "16px",
+            }}>
+              <AlertTriangle size={14} color="var(--green)" />
+              <p style={{ fontSize: "12px", color: "var(--green)", margin: 0 }}>
+                Deleting memories is permanent, but your companions will naturally learn again from future conversations.
+              </p>
+            </div>
+          </div>
+          </div>
           </>
         )}
       </div>
