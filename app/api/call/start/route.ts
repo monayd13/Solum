@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { buildSystemPrompt } from "@/lib/agents/prompts";
+import { buildDynamicVariables } from "@/lib/agents/prompts";
 import { UserAgent, UserProfile, Memory } from "@/types";
 
 export async function POST(req: NextRequest) {
@@ -33,6 +33,9 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Agent not found" }, { status: 404 });
     }
 
+    const userAgent = agent as UserAgent;
+    const template = userAgent.template!;
+
     // Fetch top memories for this user+agent
     const { data: memories } = await supabase
       .from("memories")
@@ -49,12 +52,20 @@ export async function POST(req: NextRequest) {
       .eq("id", user.id)
       .single();
 
-    const systemPrompt = buildSystemPrompt({
-      agent: (agent as UserAgent).template!,
+    // Count past conversations for adaptive first message
+    const { count: conversationCount } = await supabase
+      .from("conversations")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", user.id)
+      .eq("agent_id", agentId);
+
+    // Build dynamic variables (fills {{placeholders}} in the ElevenLabs voice prompt)
+    const dynamicVariables = buildDynamicVariables({
+      agent: template,
       userProfile: (profile as UserProfile) ?? { id: user.id, full_name: null, avatar_url: null, created_at: "" },
       memories: (memories as Memory[]) ?? [],
-      personalityOverrides: (agent as UserAgent).personality_overrides,
-      customInstructions: (agent as UserAgent).custom_instructions,
+      conversationCount: conversationCount ?? 0,
+      customInstructions: userAgent.custom_instructions,
     });
 
     // Create conversation record (ElevenLabs conversation ID linked later via /api/call/link)
@@ -67,9 +78,15 @@ export async function POST(req: NextRequest) {
       .select()
       .single();
 
+    // Use per-agent ElevenLabs ID, fall back to env var during migration
+    const elevenlabsAgentId =
+      template.elevenlabs_agent_id || process.env.NEXT_PUBLIC_ELEVENLABS_AGENT_ID || "";
+
     return NextResponse.json({
       conversationRecordId: conversation?.id,
-      systemPrompt,
+      elevenlabsAgentId,
+      dynamicVariables,
+      voiceSettings: userAgent.voice_settings,
     });
   } catch (err) {
     console.error("Error starting call:", err);

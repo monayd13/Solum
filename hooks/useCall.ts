@@ -56,16 +56,31 @@ export function useCall(agentId: string) {
         throw new Error(data.error || "Failed to start call");
       }
 
-      const { conversationRecordId, systemPrompt } = await res.json();
+      const { conversationRecordId, elevenlabsAgentId, dynamicVariables, voiceSettings } = await res.json();
       conversationRecordIdRef.current = conversationRecordId;
 
       // 2. Start ElevenLabs conversation via SDK
-      const elAgentId = process.env.NEXT_PUBLIC_ELEVENLABS_AGENT_ID!;
+      const elAgentId = elevenlabsAgentId || process.env.NEXT_PUBLIC_ELEVENLABS_AGENT_ID!;
       console.log("[ElevenLabs] Starting session with agentId:", elAgentId);
-      console.log("[ElevenLabs] System prompt length:", systemPrompt?.length);
+      console.log("[ElevenLabs] Dynamic variables:", Object.keys(dynamicVariables || {}));
+
+      // Build TTS overrides from per-user voice settings
+      const ttsOverrides: Record<string, number | string> = {};
+      if (voiceSettings?.speed != null) ttsOverrides.speed = voiceSettings.speed;
+      if (voiceSettings?.stability != null) ttsOverrides.stability = voiceSettings.stability;
+      if (voiceSettings?.similarityBoost != null) ttsOverrides.similarityBoost = voiceSettings.similarityBoost;
+
+      const agentOverrides: Record<string, string> = {};
+      if (voiceSettings?.language) agentOverrides.language = voiceSettings.language;
+
       const conversation = await Conversation.startSession({
         agentId: elAgentId,
         connectionType: "websocket",
+        dynamicVariables: dynamicVariables || undefined,
+        overrides: {
+          ...(Object.keys(ttsOverrides).length > 0 ? { tts: ttsOverrides } : {}),
+          ...(Object.keys(agentOverrides).length > 0 ? { agent: agentOverrides } : {}),
+        },
         onConnect: () => {
           console.log("[ElevenLabs] Connected");
           setStatus("connected");

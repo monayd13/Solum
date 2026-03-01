@@ -16,6 +16,8 @@ export interface AgentTemplate {
   backstory: string;
   personality_traits: PersonalityTraits | null;
   voice_id: string;
+  elevenlabs_agent_id: string | null;
+  languages: string[];
   avatar_url: string | null;
   avatar_emoji: string | null;
   accent_color: string | null;
@@ -30,6 +32,7 @@ export interface UserAgent {
   custom_name: string | null;
   personality_overrides: Partial<PersonalityTraits> | null;
   custom_instructions: string | null;
+  voice_settings: VoiceSettings | null;
   created_at: string;
   template?: AgentTemplate;
 }
@@ -78,6 +81,13 @@ export interface PersonalityTraits {
   storytelling: number;
   curiosity: number;
   empathy: number;
+}
+
+export interface VoiceSettings {
+  speed?: number;
+  stability?: number;
+  similarityBoost?: number;
+  language?: string;
 }
 
 export type CallStatus = "idle" | "connecting" | "connected" | "error";

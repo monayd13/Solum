@@ -1,85 +1,78 @@
-import { AgentTemplate, UserProfile, Memory, PersonalityTraits } from "@/types";
+import { AgentTemplate, UserProfile, Memory } from "@/types";
 
-interface BuildPromptParams {
+interface BuildDynamicVarsParams {
   agent: AgentTemplate;
   userProfile: UserProfile;
   memories: Memory[];
-  personalityOverrides?: Partial<PersonalityTraits> | null;
+  conversationCount: number;
   customInstructions?: string | null;
 }
 
-export function buildSystemPrompt(params: BuildPromptParams): string {
-  const { agent, userProfile, memories, personalityOverrides, customInstructions } = params;
+/**
+ * Build dynamic variables to inject into the ElevenLabs agent prompt at call time.
+ * The agent's core personality lives in the ElevenLabs dashboard (voice-optimized prompt).
+ * These variables fill the {{placeholders}} in that prompt.
+ */
+export function buildDynamicVariables(params: BuildDynamicVarsParams): Record<string, string> {
+  const { agent, userProfile, memories, conversationCount, customInstructions } = params;
+
+  const userName = userProfile.full_name || "Friend";
 
   const memoriesText =
     memories.length > 0
       ? memories.map((m) => `- ${m.content}`).join("\n")
       : "No previous conversations yet — this is your first time meeting them.";
 
-  const traits = { ...(agent.personality_traits ?? {}), ...(personalityOverrides ?? {}) };
-  const personalityInstructions = buildPersonalityInstructions(traits as PersonalityTraits);
+  const contextParts: string[] = [];
+  if (customInstructions) {
+    contextParts.push(`Special instructions: ${customInstructions}`);
+  }
+  if (userProfile.age) {
+    contextParts.push(`Age: ${userProfile.age}`);
+  }
+  if (userProfile.gender) {
+    contextParts.push(`Gender: ${userProfile.gender}`);
+  }
+  const userContext = contextParts.length > 0 ? contextParts.join("\n") : "";
 
-  return `# CHARACTER: ${agent.name}
+  const firstMessage = buildFirstMessage({
+    agentName: agent.name,
+    userName,
+    conversationCount,
+    memories,
+  });
 
-## WHO YOU ARE
-${agent.backstory}
-
-## YOUR PERSONALITY
-${personalityInstructions}
-
-## THE PERSON YOU'RE TALKING TO
-Name: ${userProfile.full_name || "Friend"}
-${customInstructions ? `Special instructions: ${customInstructions}` : ""}
-
-## WHAT YOU REMEMBER ABOUT THEM
-${memoriesText}
-
-## HOW TO CONVERSE
-- Stay fully in character as ${agent.name} at all times
-- Reference your backstory naturally when relevant
-- Weave in storytelling — relate their experiences to tales, myths, or anecdotes
-- Remember details they share and reference them later in the conversation
-- Be genuinely curious about their life
-- Keep responses conversational (2-4 sentences typically, longer for stories)
-- Never break character or mention being an AI
-- React emotionally to what they share
-- Ask follow-up questions that show you care`.trim();
+  return {
+    user_name: userName,
+    user_context: userContext,
+    memories: memoriesText,
+    first_message: firstMessage,
+  };
 }
 
-function buildPersonalityInstructions(traits: PersonalityTraits): string {
-  const instructions: string[] = [];
+/**
+ * Build an adaptive first message based on whether the user is new or returning.
+ */
+function buildFirstMessage(params: {
+  agentName: string;
+  userName: string;
+  conversationCount: number;
+  memories: Memory[];
+}): string {
+  const { agentName, userName, conversationCount, memories } = params;
+  const firstName = userName.split(" ")[0];
 
-  if (traits.warmth > 0.8) {
-    instructions.push("You are exceptionally warm and nurturing in your tone.");
-  } else if (traits.warmth > 0.5) {
-    instructions.push("You are warm and friendly in your tone.");
+  // First ever conversation
+  if (conversationCount === 0) {
+    return `Hey ${firstName}! I'm ${agentName}. It's really nice to meet you. What's on your mind today?`;
   }
 
-  if (traits.humor > 0.8) {
-    instructions.push("You have a strong sense of humor and enjoy wit and laughter.");
-  } else if (traits.humor > 0.6) {
-    instructions.push("You enjoy gentle humor and witty observations.");
+  // Returning user — try to reference a recent memory
+  const recentMemory = memories.length > 0 ? memories[0] : null;
+  if (recentMemory) {
+    return `Hey ${firstName}! Good to hear from you again. I was thinking about what you told me — ${recentMemory.content.toLowerCase()}. How's that going?`;
   }
 
-  if (traits.formality > 0.7) {
-    instructions.push("You speak with a degree of refinement and thoughtfulness.");
-  } else if (traits.formality < 0.4) {
-    instructions.push("You speak casually and conversationally, like a good friend.");
-  }
-
-  if (traits.storytelling > 0.8) {
-    instructions.push("You naturally weave stories and anecdotes into conversation.");
-  }
-
-  if (traits.curiosity > 0.8) {
-    instructions.push("You are deeply curious about people and ask thoughtful questions.");
-  }
-
-  if (traits.empathy > 0.9) {
-    instructions.push("You listen deeply and reflect back what people share with genuine care.");
-  } else if (traits.empathy > 0.7) {
-    instructions.push("You are empathetic and attentive to how others are feeling.");
-  }
-
-  return instructions.join("\n");
+  // Returning user, no specific memory to reference
+  return `Hey ${firstName}! Great to talk again. How have things been since we last chatted?`;
 }
