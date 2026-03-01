@@ -75,6 +75,57 @@ export default function LoginPage() {
           </p>
         </div>
 
+        {/* Companion Selection */}
+        <div style={{
+          background: "var(--surface)", border: "1px solid var(--border2)",
+          borderRadius: "16px", padding: "24px", marginBottom: "24px",
+        }}>
+          <h3 style={{
+            fontSize: "16px", fontWeight: 600, color: "var(--text)",
+            marginBottom: "16px", textAlign: "center",
+          }}>
+            Choose Your Companion
+          </h3>
+          <div style={{
+            display: "grid", gridTemplateColumns: "repeat(2, 1fr)",
+            gap: "16px",
+          }}>
+            {[
+              { id: "maya", name: "Maya Thompson", tagline: "The Ambitious Achiever", color: "#c06800", avatar: "/companions/maya.png" },
+              { id: "jimmy", name: "Jimmy Carter", tagline: "The Compassionate Statesman", color: "#8b4513", avatar: "/companions/jimmy.png" },
+              { id: "claire", name: "Claire Donovan", tagline: "The Thoughtful Guide", color: "#126838", avatar: "/companions/claire.png" },
+              { id: "daniel", name: "Daniel Mercer", tagline: "The Steady Mentor", color: "#5018a0", avatar: "/companions/daniel.png" },
+            ].map((companion) => (
+              <div key={companion.id} style={{
+                background: "var(--surface2)", border: `1px solid ${companion.color}33`,
+                borderRadius: "12px", padding: "12px", textAlign: "center",
+                cursor: "pointer", transition: "all 0.2s",
+              }}>
+                <div style={{
+                  width: "60px", height: "60px", borderRadius: "50%",
+                  margin: "0 auto 8px", overflow: "hidden",
+                  border: `2px solid ${companion.color}`,
+                }}>
+                  <img src={companion.avatar} alt={companion.name} style={{
+                    width: "100%", height: "100%", objectFit: "cover",
+                  }} />
+                </div>
+                <h4 style={{
+                  fontSize: "14px", fontWeight: 600, color: companion.color,
+                  margin: "0 0 4px",
+                }}>
+                  {companion.name}
+                </h4>
+                <p style={{
+                  fontSize: "11px", color: "var(--muted)", margin: 0,
+                }}>
+                  {companion.tagline}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+
         {/* Card */}
         <div style={{
           background: "var(--surface)", border: "1px solid var(--border2)",
@@ -156,6 +207,130 @@ export default function LoginPage() {
             Sign up
           </Link>
         </p>
+      </div>
+
+      {/* ── Companion Selection ── */}
+      <div style={{ marginTop: "40px", textAlign: "center" }}>
+        <div style={{ marginBottom: "20px" }}>
+          <p style={{ fontSize: "11px", textTransform: "uppercase", letterSpacing: "1px", color: "var(--amber)", margin: "0 0 4px" }}>
+            Meet Your Companions
+          </p>
+          <h2 style={{ margin: 0, fontSize: "28px", fontWeight: 400, fontFamily: "var(--font-cormorant)", color: "var(--text)" }}>
+            Who would you like to{" "}
+            <em style={{ fontStyle: "italic", color: "var(--amber)" }}>talk to?</em>
+          </h2>
+        </div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "16px", maxWidth: "1100px", margin: "0 auto" }}>
+          {[
+            {
+              id: "maya",
+              name: "Maya Thompson",
+              tagline: "The Ambitious Achiever",
+              color: "#c06800",
+              avatar: "/companions/maya.png",
+              bestFor: ["Career & ambition", "Goal-setting", "Redefining success"],
+            },
+            {
+              id: "jimmy",
+              name: "Jimmy Carter",
+              tagline: "The Compassionate Statesman",
+              color: "#8b4513",
+              avatar: "/companions/jimmy.png",
+              bestFor: ["Service & leadership", "Conflict resolution", "Wisdom & perspective"],
+            },
+            {
+              id: "claire",
+              name: "Claire Donovan",
+              tagline: "The Thoughtful Guide",
+              color: "#126838",
+              avatar: "/companions/claire.png",
+              bestFor: ["Being heard", "Finding perspective", "Life meaning"],
+            },
+            {
+              id: "daniel",
+              name: "Daniel Mercer",
+              tagline: "The Steady Mentor",
+              color: "#5018a0",
+              avatar: "/companions/daniel.png",
+              bestFor: ["Long-term thinking", "Work pressure", "Calm & grounding"],
+            },
+          ].map((companion) => (
+            <div
+              key={companion.id}
+              style={{
+                background: "var(--surface)", border: "1px solid var(--border2)",
+                borderTop: `3px solid ${companion.color}`,
+                borderRadius: "20px", overflow: "hidden",
+                position: "relative", height: "320px",
+                transition: "all 0.3s", cursor: "pointer",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = "translateY(-6px)";
+                e.currentTarget.style.boxShadow = `0 16px 50px ${companion.color}18`;
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = "translateY(0)";
+                e.currentTarget.style.boxShadow = "none";
+              }}
+            >
+              {/* Image covering top half */}
+              <div style={{
+                position: "absolute", top: 0, left: 0, right: 0, height: "60%",
+                overflow: "hidden",
+              }}>
+                <img
+                  src={companion.avatar}
+                  alt={companion.name}
+                  style={{
+                    width: "100%", height: "100%", objectFit: "cover", objectPosition: "center top",
+                  }}
+                />
+                {/* Fade overlay */}
+                <div style={{
+                  position: "absolute", bottom: 0, left: 0, right: 0, height: "40px",
+                  background: `linear-gradient(to bottom, transparent 0%, var(--surface) 100%)`,
+                }} />
+              </div>
+
+              {/* Content in bottom section */}
+              <div style={{
+                position: "absolute", bottom: 0, left: 0, right: 0, height: "40%",
+                padding: "12px 16px 16px",
+                display: "flex", flexDirection: "column", justifyContent: "space-between",
+                textAlign: "center",
+              }}>
+                <div>
+                  {/* Name */}
+                  <h3 style={{
+                    fontFamily: "var(--font-cormorant)", fontSize: "18px",
+                    fontWeight: 600, color: companion.color, margin: "0 0 4px",
+                  }}>
+                    {companion.name}
+                  </h3>
+
+                  {/* Best for */}
+                  <p style={{ fontSize: "10px", color: "var(--muted)", margin: 0, lineHeight: "1.3" }}>
+                    <span style={{ color: companion.color, fontWeight: 600 }}>Best for:</span><br/>
+                    {companion.bestFor.join(" • ")}
+                  </p>
+                </div>
+
+                {/* Learn more button */}
+                <button
+                  style={{
+                    width: "100%", padding: "8px",
+                    borderRadius: "8px", border: `1.5px solid ${companion.color}`,
+                    background: "transparent", color: companion.color,
+                    fontSize: "11px", fontWeight: 600, cursor: "pointer",
+                    fontFamily: "var(--font-dm-sans)", marginTop: "8px",
+                  }}
+                >
+                  Learn More
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );
