@@ -1,10 +1,10 @@
-## 🌿 Solum
+# 🌿 Solum
 
 An AI Companion That Grows With You
 
 Solum is an AI-powered conversational companion designed to provide meaningful, engaging, and emotionally aware conversations. Built with Next.js, Supabase, and AI APIs, Solum shares stories, remembers yours, and evolves over time.
 
-# ✨ Features
+## ✨ Features
 
 💬 Real-time AI conversation
 
@@ -18,7 +18,8 @@ Solum is an AI-powered conversational companion designed to provide meaningful, 
 
 📱 Modern responsive UI (Next.js + React)
 
-🏗 Tech Stack
+
+## 🏗 Tech Stack
 
 Frontend: Next.js (App Router), React, TypeScript
 
@@ -30,13 +31,13 @@ Voice (Optional): ElevenLabs
 
 Deployment: Vercel
 
-🚀 Getting Started
-1️⃣ Clone the Repository
+## 🚀 Getting Started
+### 1️⃣ Clone the Repository
 git clone https://github.com/shreyamahajan5/Solum.git
 cd Solum
-2️⃣ Install Dependencies
+### 2️⃣ Install Dependencies
 npm install
-3️⃣ Setup Environment Variables
+### 3️⃣ Setup Environment Variables
 
 Create a .env.local file in the root directory:
 
