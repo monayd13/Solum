@@ -33,30 +33,36 @@ Deployment: Vercel
 
 ## 🚀 Getting Started
 ### 1️⃣ Clone the Repository
+```bash
 git clone https://github.com/shreyamahajan5/Solum.git
 cd Solum
+```
 ### 2️⃣ Install Dependencies
+```bash
 npm install
+```
 ### 3️⃣ Setup Environment Variables
 
-Create a .env.local file in the root directory:
-
+#### Create a .env.local file in the root directory:
+```bash
 NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
 
 OPENAI_API_KEY=your_openai_key
 ELEVENLABS_API_KEY=your_elevenlabs_key
 ELEVENLABS_AGENT_ID=your_agent_id
-
+```
 If you're using ElevenLabs Conversational AI, you can find your Agent ID in the ElevenLabs dashboard under Conversational AI → Agents.
 
-4️⃣ Run the Development Server
+## 4️⃣ Run the Development Server
+```bash
 npm run dev
-
-Visit:
+```
+## Visit:
 
 http://localhost:3000
-🧠 How Solum Works
+
+### 🧠 How Solum Works
 
 User logs in via Supabase authentication
 
@@ -68,7 +74,7 @@ Conversation memory is stored in Supabase
 
 (Optional) Responses are converted to speech using ElevenLabs
 
-📁 Project Structure
+## 📁 Project Structure
 app/              → Routes & pages (Next.js App Router)
 components/       → Reusable UI components
 hooks/            → Custom React hooks
@@ -77,7 +83,7 @@ supabase/         → Database configuration
 public/           → Static assets
 🔊 ElevenLabs Voice Integration (Optional)
 
-To enable voice responses:
+## To enable voice responses:
 
 Create an Agent in ElevenLabs
 
@@ -87,15 +93,15 @@ Add it to .env.local
 
 Ensure Conversational AI is enabled in your ElevenLabs plan
 
-🌎 Deployment
+## 🌎 Deployment
 
 Solum is optimized for deployment on Vercel:
 
 vercel
 
 Make sure all environment variables are added in the Vercel dashboard.
-
-🎯 Vision
+ 
+## 🎯 Vision
 
 Solum isn’t just a chatbot.
 It’s designed to be:
@@ -106,10 +112,11 @@ A memory-preserving conversational partner
 
 A calm, emotionally aware AI presence
 
-🤝 Contributing
+
+## 🤝 Contributing
 
 Pull requests are welcome. For major changes, please open an issue first to discuss what you'd like to change.
 
-📄 License
+### 📄 License
 
 MIT License
