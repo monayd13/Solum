@@ -1,5 +1,7 @@
 # 🌿 Solum
 
+Live : https://solum-olive.vercel.app/ 
+
 An AI Companion That Grows With You
 
 Solum is an AI-powered conversational companion designed to provide meaningful, engaging, and emotionally aware conversations. Built with Next.js, Supabase, and AI APIs, Solum shares stories, remembers yours, and evolves over time.
@@ -98,6 +100,8 @@ Ensure Conversational AI is enabled in your ElevenLabs plan
 Solum is optimized for deployment on Vercel:
 
 vercel
+Link : https://devpost.com/software/solume?ref_content=my-projects-tab&ref_feature=my_projects
+
 
 Make sure all environment variables are added in the Vercel dashboard.
  
