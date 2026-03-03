@@ -1,36 +1,122 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 🌿 Solum
 
-## Getting Started
+An AI Companion That Grows With You
 
-First, run the development server:
+Solum is an AI-powered conversational companion designed to provide meaningful, engaging, and emotionally aware conversations. Built with Next.js, Supabase, and AI APIs, Solum shares stories, remembers yours, and evolves over time.
 
+## ✨ Features
+
+💬 Real-time AI conversation
+
+🧠 Memory-based interaction (remembers user context)
+
+🔊 Voice-ready architecture (supports ElevenLabs integration)
+
+🔐 Authentication with Supabase
+
+🌱 Emotionally intelligent companion design
+
+📱 Modern responsive UI (Next.js + React)
+
+
+## 🏗 Tech Stack
+
+Frontend: Next.js (App Router), React, TypeScript
+
+Backend / DB: Supabase
+
+AI Integration: LLM API (OpenAI-compatible)
+
+Voice (Optional): ElevenLabs
+
+Deployment: Vercel
+
+## 🚀 Getting Started
+### 1️⃣ Clone the Repository
+```bash
+git clone https://github.com/shreyamahajan5/Solum.git
+cd Solum
+```
+### 2️⃣ Install Dependencies
+```bash
+npm install
+```
+### 3️⃣ Setup Environment Variables
+
+#### Create a .env.local file in the root directory:
+```bash
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+
+OPENAI_API_KEY=your_openai_key
+ELEVENLABS_API_KEY=your_elevenlabs_key
+ELEVENLABS_AGENT_ID=your_agent_id
+```
+If you're using ElevenLabs Conversational AI, you can find your Agent ID in the ElevenLabs dashboard under Conversational AI → Agents.
+
+## 4️⃣ Run the Development Server
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
+## Visit:
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+http://localhost:3000
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### 🧠 How Solum Works
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+User logs in via Supabase authentication
 
-## Learn More
+Messages are sent to an AI backend
 
-To learn more about Next.js, take a look at the following resources:
+The AI generates contextual responses
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Conversation memory is stored in Supabase
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+(Optional) Responses are converted to speech using ElevenLabs
 
-## Deploy on Vercel
+## 📁 Project Structure
+app/              → Routes & pages (Next.js App Router)
+components/       → Reusable UI components
+hooks/            → Custom React hooks
+lib/              → API utilities & helpers
+supabase/         → Database configuration
+public/           → Static assets
+🔊 ElevenLabs Voice Integration (Optional)
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## To enable voice responses:
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Create an Agent in ElevenLabs
+
+Copy the Agent ID
+
+Add it to .env.local
+
+Ensure Conversational AI is enabled in your ElevenLabs plan
+
+## 🌎 Deployment
+
+Solum is optimized for deployment on Vercel:
+
+vercel
+
+Make sure all environment variables are added in the Vercel dashboard.
+ 
+## 🎯 Vision
+
+Solum isn’t just a chatbot.
+It’s designed to be:
+
+A companion for the elderly
+
+A memory-preserving conversational partner
+
+A calm, emotionally aware AI presence
+
+
+## 🤝 Contributing
+
+Pull requests are welcome. For major changes, please open an issue first to discuss what you'd like to change.
+
+### 📄 License
+
+MIT License
