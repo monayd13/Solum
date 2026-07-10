@@ -10,11 +10,12 @@ import { UserStories } from "@/components/landing/UserStories";
 import { FAQ } from "@/components/landing/FAQ";
 import { FinalCTA } from "@/components/landing/FinalCTA";
 import { Footer } from "@/components/landing/Footer";
+import { Brain, Mic2, ShieldCheck, Sparkles, Trash2 } from "lucide-react";
 
 const FEATURES = [
-  { icon: "🎙️", title: "Real Voice Conversations", color: "#d4880a", desc: "Low-latency voice AI that listens, responds, and feels like a real phone call." },
-  { icon: "🧠", title: "Persistent Memory",         color: "#2a9d8f", desc: "Every conversation is remembered. Your companion grows closer with each call." },
-  { icon: "✨", title: "Rich Personalities",         color: "#5a9e6a", desc: "Each companion has a deep backstory, distinct voice, and unique worldview." },
+  { icon: Mic2, title: "Real Voice Conversations", color: "#d4880a", desc: "Low-latency voice AI designed for natural back-and-forth conversation." },
+  { icon: Brain, title: "Persistent Memory", color: "#2a9d8f", desc: "Useful context can carry into the next call, with controls to review or delete it." },
+  { icon: Sparkles, title: "Distinct Personalities", color: "#5a9e6a", desc: "Choose from the live companion catalog, each with a different history, style, and language set." },
 ];
 
 export default function LandingPage() {
@@ -76,7 +77,7 @@ export default function LandingPage() {
           animation: "fadeUp 0.8s ease both",
         }}>
           <span style={{ width: "6px", height: "6px", borderRadius: "50%", background: "var(--amber)", animation: "pulse 2s infinite" }} />
-          AI Companion Platform · 2026
+          Voice companion platform
         </div>
 
         <h1 style={{
@@ -122,26 +123,11 @@ export default function LandingPage() {
           fontSize: "12px", color: "var(--muted)", flexWrap: "wrap", justifyContent: "center",
           animation: "fadeUp 0.8s 0.35s ease both",
         }}>
-          <span>🔒 Private by default</span>
+          <span className="micro-trust"><ShieldCheck size={13} /> Authenticated by default</span>
           <span style={{ opacity: 0.3 }}>•</span>
-          <span>🗑️ Delete memories anytime</span>
+          <span className="micro-trust"><Trash2 size={13} /> Delete memories anytime</span>
           <span style={{ opacity: 0.3 }}>•</span>
-          <span>💚 No judgment</span>
-        </div>
-
-        {/* Stats */}
-        <div style={{ display: "flex", gap: "48px", marginTop: "56px", flexWrap: "wrap", justifyContent: "center", animation: "fadeUp 0.8s 0.4s ease both" }}>
-          {[
-            { val: "4",    label: "Companions" },
-            { val: "2.4s", label: "Response Time" },
-            { val: "∞",    label: "Memory" },
-            { val: "0",    label: "Apps to Install" },
-          ].map(({ val, label }) => (
-            <div key={label} style={{ textAlign: "center" }}>
-              <div style={{ fontFamily: "var(--font-cormorant)", fontSize: "36px", fontWeight: 300, color: "var(--amber)", lineHeight: 1, marginBottom: "4px" }}>{val}</div>
-              <div style={{ fontSize: "11px", color: "var(--muted)", letterSpacing: "1px", textTransform: "uppercase" }}>{label}</div>
-            </div>
-          ))}
+          <span className="micro-trust"><Brain size={13} /> No browser storage</span>
         </div>
 
         <a href="#companions" style={{
@@ -179,7 +165,7 @@ export default function LandingPage() {
               onMouseEnter={e => (e.currentTarget as HTMLElement).style.transform = "translateY(-4px)"}
               onMouseLeave={e => (e.currentTarget as HTMLElement).style.transform = "translateY(0)"}
             >
-              <span style={{ fontSize: "28px", marginBottom: "16px", display: "block" }}>{f.icon}</span>
+              <f.icon size={26} color={f.color} style={{ marginBottom: "16px" }} />
               <h3 style={{ fontSize: "16px", fontWeight: 600, marginBottom: "8px", color: "var(--text)" }}>{f.title}</h3>
               <p style={{ fontSize: "13px", color: "var(--muted)", lineHeight: "1.7" }}>{f.desc}</p>
             </div>

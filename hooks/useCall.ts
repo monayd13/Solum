@@ -61,14 +61,10 @@ export function useCall(agentId: string) {
 
       // 2. Start ElevenLabs conversation via SDK
       const elAgentId = elevenlabsAgentId || process.env.NEXT_PUBLIC_ELEVENLABS_AGENT_ID!;
-      console.log("[ElevenLabs] Starting session with agentId:", elAgentId);
-      console.log("[ElevenLabs] Dynamic variables (keys):", Object.keys(dynamicVariables || {}));
-      console.log("[ElevenLabs] Dynamic variables (full):", JSON.stringify(dynamicVariables, null, 2));
 
       // Request microphone permission before starting session
       try {
         await navigator.mediaDevices.getUserMedia({ audio: true });
-        console.log("[ElevenLabs] Microphone permission granted");
       } catch (micErr) {
         console.error("[ElevenLabs] Microphone permission denied:", micErr);
         throw new Error("Microphone access is required. Please allow microphone permission and try again.");
@@ -98,24 +94,19 @@ export function useCall(agentId: string) {
         }
       }
 
-      console.log("[ElevenLabs] Overrides:", overrides ?? "none (using agent defaults)");
-
       const sessionConfig: Record<string, unknown> = {
         agentId: elAgentId,
         dynamicVariables: dynamicVariables || undefined,
         onConnect: () => {
-          console.log("[ElevenLabs] Connected");
           setStatus("connected");
         },
         onDisconnect: () => {
-          console.log("[ElevenLabs] Disconnected");
           setStatus("idle");
           setIsSpeaking(false);
           stopAudioLevelPolling();
           conversationRef.current = null;
         },
         onModeChange: ({ mode }: { mode: string }) => {
-          console.log("[ElevenLabs] Mode:", mode);
           setIsSpeaking(mode === "speaking");
         },
         onError: (err: unknown) => {
@@ -124,12 +115,8 @@ export function useCall(agentId: string) {
           setStatus("error");
           stopAudioLevelPolling();
         },
-        onMessage: (msg: unknown) => {
-          console.log("[ElevenLabs] Message:", msg);
-        },
-        onStatusChange: (status: unknown) => {
-          console.log("[ElevenLabs] Status:", status);
-        },
+        onMessage: () => {},
+        onStatusChange: () => {},
       };
       if (overrides) {
         sessionConfig.overrides = overrides;

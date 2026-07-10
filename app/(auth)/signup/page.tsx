@@ -71,6 +71,7 @@ export default function SignupPage() {
   const [showConfirm, setShowConfirm]     = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError]     = useState<string | null>(null);
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
 
   function handleNext(e: React.FormEvent) {
     e.preventDefault();
@@ -79,8 +80,8 @@ export default function SignupPage() {
       setError("Please enter your first and last name."); return;
     }
     const age = getAge(dob);
-    if (age !== null && age < 10) {
-      setError("You must be at least 10 years old to sign up."); return;
+    if (age === null || age < 18) {
+      setError("Solum is currently available to adults 18 and older."); return;
     }
     setStep(2);
   }
@@ -92,21 +93,21 @@ export default function SignupPage() {
     const pwErr = validatePassword(password);
     if (pwErr) { setError(pwErr); return; }
     if (password !== confirmPassword) { setError("Passwords do not match."); return; }
+    if (!acceptedTerms) { setError("Please accept the Terms and Privacy Policy."); return; }
 
     setLoading(true);
     const supabase = createClient();
     const fullName = `${firstName.trim()} ${lastName.trim()}`;
-    const age = getAge(dob);
+    const companionId = new URL(window.location.href).searchParams.get("companion");
+    const normalizedPhone = phone.trim() ? phone.replace(/[\s().-]/g, "") : null;
 
     const { data, error: signUpError } = await supabase.auth.signUp({
-      email,
+      email: email.trim().toLowerCase(),
       password,
-      options: { data: { full_name: fullName, phone: phone || null, dob: dob || null, gender: gender || null } },
+      options: { data: { full_name: fullName, phone: normalizedPhone, dob, gender: gender || null, companion_id: companionId } },
     });
 
     if (signUpError) {
-      console.error("[Signup] Auth signUp failed:", JSON.stringify(signUpError, null, 2));
-      console.error("[Signup] Error status:", signUpError.status, "code:", signUpError.code, "message:", signUpError.message);
       setError(signUpError.message);
       setLoading(false);
       return;
@@ -116,16 +117,16 @@ export default function SignupPage() {
       const { error: profileError } = await supabase.from("profiles").upsert({
         id: data.user.id,
         full_name: fullName,
-        phone: phone || null,
+        phone: normalizedPhone,
+        dob,
+        gender: gender || null,
       });
 
       if (profileError) {
-        console.error("[Signup] Profile save failed:", profileError.message);
         setError("Account created but profile save failed. You can update your profile later.");
         setLoading(false);
         return;
       }
-      console.log("[Signup] Profile saved for user:", data.user.id, { fullName, gender, dob, phone });
     }
 
     if (data.session) {
@@ -377,6 +378,11 @@ export default function SignupPage() {
                   {confirmPassword === password ? "✓ Passwords match" : "✗ Passwords do not match"}
                 </p>
               )}
+
+              <label style={{ display: "flex", gap: "10px", alignItems: "flex-start", fontSize: "12px", color: "var(--muted)", lineHeight: 1.6 }}>
+                <input type="checkbox" checked={acceptedTerms} onChange={(event) => setAcceptedTerms(event.target.checked)} required style={{ marginTop: "3px", accentColor: "var(--amber)" }} />
+                <span>I&apos;m 18 or older and agree to the <Link href="/terms" target="_blank" style={{ color: "var(--amber)" }}>Terms</Link> and <Link href="/privacy" target="_blank" style={{ color: "var(--amber)" }}>Privacy Policy</Link>.</span>
+              </label>
 
               {error && (
                 <p style={{

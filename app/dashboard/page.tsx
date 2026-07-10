@@ -3,10 +3,9 @@
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { ThemeToggle } from "@/components/ThemeToggle";
-import { MoodCheckIn } from "@/components/dashboard/MoodCheckIn";
 import { MemoryCorner } from "@/components/dashboard/MemoryCorner";
 import { UserAgent, UserProfile, AgentTemplate } from "@/types";
-import { LogOut, Phone, Plus, ChevronDown, ChevronUp, Sparkles, Clock, MessageSquare, Settings } from "lucide-react";
+import { LogOut, Phone, Plus, ChevronDown, ChevronUp, Sparkles, Clock, MessageSquare, Settings, UserRound } from "lucide-react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 
@@ -41,6 +40,7 @@ function CompanionCard({ agent, onCall }: { agent: UserAgent; onCall: () => void
   const name = agent.custom_name || template?.name || "Unknown";
   const color = template?.accent_color || "#d4880a";
   const traits = template?.personality_traits as Record<string, number> | null;
+  const initials = name.split(/\s+/).slice(0, 2).map((part) => part[0]).join("");
 
   return (
     <div style={{
@@ -56,7 +56,7 @@ function CompanionCard({ agent, onCall }: { agent: UserAgent; onCall: () => void
             background: `${color}18`, border: `2px solid ${color}40`,
             display: "flex", alignItems: "center", justifyContent: "center", fontSize: "28px",
           }}>
-            {template?.avatar_emoji || "🤖"}
+            <UserRound size={20} /> <span style={{ fontSize: "13px", fontWeight: 700 }}>{initials}</span>
           </div>
           <div style={{ flex: 1, minWidth: 0 }}>
             <h3 style={{ fontSize: "20px", fontWeight: 600, color, fontFamily: "var(--font-cormorant)", margin: 0 }}>
@@ -147,6 +147,7 @@ function DiscoverCard({ template, onAdd, adding }: { template: AgentTemplate; on
   const [expanded, setExpanded] = useState(false);
   const color = template.accent_color || "#d4880a";
   const traits = template.personality_traits as Record<string, number> | null;
+  const initials = template.name.split(/\s+/).slice(0, 2).map((part) => part[0]).join("");
 
   return (
     <div style={{
@@ -160,7 +161,7 @@ function DiscoverCard({ template, onAdd, adding }: { template: AgentTemplate; on
             background: `${color}18`, border: `2px solid ${color}40`,
             display: "flex", alignItems: "center", justifyContent: "center", fontSize: "24px",
           }}>
-            {template.avatar_emoji || "🤖"}
+            <UserRound size={18} /> <span style={{ fontSize: "12px", fontWeight: 700 }}>{initials}</span>
           </div>
           <div>
             <h3 style={{ fontSize: "18px", fontWeight: 600, color, fontFamily: "var(--font-cormorant)", margin: 0 }}>
@@ -181,7 +182,7 @@ function DiscoverCard({ template, onAdd, adding }: { template: AgentTemplate; on
             {Object.entries(traits)
               .sort(([, a], [, b]) => (b as number) - (a as number))
               .slice(0, 2)
-              .map(([trait, val]) => (
+              .map(([trait]) => (
                 <span key={trait} style={{
                   fontSize: "11px", padding: "2px 8px", borderRadius: "99px",
                   background: `${color}12`, border: `1px solid ${color}25`, color,
@@ -250,25 +251,31 @@ export default function DashboardPage() {
   const [templates, setTemplates] = useState<AgentTemplate[]>([]);
   const [loading, setLoading] = useState(true);
   const [adding, setAdding] = useState(false);
-
-  useEffect(() => { loadData(); }, []);
+  const [conversationStats, setConversationStats] = useState({ count: 0, durationSeconds: 0 });
 
   async function loadData() {
     const supabase = createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
-    const [{ data: profileData }, { data: agentsData }, { data: templatesData }] = await Promise.all([
+    const [{ data: profileData }, { data: agentsData }, { data: templatesData }, { data: conversationsData }] = await Promise.all([
       supabase.from("profiles").select("*").eq("id", user.id).single(),
       supabase.from("user_agents").select("*, template:agent_templates(*)").eq("user_id", user.id).order("created_at", { ascending: true }),
       supabase.from("agent_templates").select("*").order("name"),
+      supabase.from("conversations").select("duration_seconds").eq("user_id", user.id),
     ]);
 
     setProfile(profileData as UserProfile);
     setAgents((agentsData as UserAgent[]) ?? []);
     setTemplates((templatesData as AgentTemplate[]) ?? []);
+    const durations = conversationsData ?? [];
+    setConversationStats({ count: durations.length, durationSeconds: durations.reduce((sum, row) => sum + (row.duration_seconds ?? 0), 0) });
     setLoading(false);
   }
+
+  // Client-side Supabase auth requires loading after hydration.
+  // eslint-disable-next-line react-hooks/set-state-in-effect
+  useEffect(() => { void loadData(); }, []);
 
   async function handleAddAgent(templateId: string) {
     setAdding(true);
@@ -379,7 +386,7 @@ export default function DashboardPage() {
                     margin: 0, fontSize: "24px", fontWeight: 600,
                     fontFamily: "var(--font-cormorant)", color: "var(--text)",
                   }}>
-                    Good {new Date().getHours() < 12 ? "morning" : new Date().getHours() < 18 ? "afternoon" : "evening"}, {firstName}
+                    Welcome back, {firstName}
                   </h2>
                   <div style={{ display: "flex", gap: "16px", marginTop: "6px", flexWrap: "wrap" }}>
                     {profile?.gender && (
@@ -411,8 +418,8 @@ export default function DashboardPage() {
                 <div style={{ display: "flex", gap: "24px", flexShrink: 0 }}>
                   {[
                     { icon: <Sparkles size={14} />, value: agents.length, label: "Companions" },
-                    { icon: <MessageSquare size={14} />, value: "—", label: "Conversations" },
-                    { icon: <Clock size={14} />, value: "—", label: "Call time" },
+                    { icon: <MessageSquare size={14} />, value: conversationStats.count, label: "Conversations" },
+                    { icon: <Clock size={14} />, value: `${Math.round(conversationStats.durationSeconds / 60)}m`, label: "Call time" },
                   ].map(({ icon, value, label }) => (
                     <div key={label} style={{ textAlign: "center" }}>
                       <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "5px", color: "var(--amber)", marginBottom: "2px" }}>
@@ -456,7 +463,7 @@ export default function DashboardPage() {
                 textAlign: "center", padding: "60px 24px", marginBottom: "48px",
                 background: "var(--surface)", border: "1px solid var(--border2)", borderRadius: "20px",
               }}>
-                <div style={{ fontSize: "48px", marginBottom: "12px" }}>✨</div>
+                <Sparkles size={40} color="var(--amber)" style={{ margin: "0 auto 12px" }} />
                 <p style={{ fontSize: "22px", fontFamily: "var(--font-cormorant)", color: "var(--text)", margin: "0 0 8px" }}>
                   No companions yet
                 </p>
@@ -466,15 +473,8 @@ export default function DashboardPage() {
               </div>
             )}
 
-            {/* ── Mood Check-in + Memory ── */}
-            <div style={{
-              display: "grid",
-              gridTemplateColumns: "1fr 340px",
-              gap: "16px",
-              marginBottom: "48px",
-              alignItems: "start",
-            }}>
-              <MoodCheckIn />
+            {/* ── Memory controls ── */}
+            <div style={{ maxWidth: "520px", marginBottom: "48px" }}>
               <MemoryCorner />
             </div>
 

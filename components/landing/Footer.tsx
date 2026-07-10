@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ShieldCheck, TriangleAlert } from "lucide-react";
 
 export function Footer() {
   return (
@@ -20,8 +21,8 @@ export function Footer() {
             <p style={{ fontSize: "13px", color: "var(--muted)", lineHeight: "1.7", maxWidth: "240px", margin: "0 0 20px" }}>
               AI companions with deep personalities, real voices, and genuine memory.
             </p>
-            <p style={{ fontSize: "11px", color: "var(--muted)", margin: 0 }}>
-              🔒 Private by default &nbsp;•&nbsp; No ads &nbsp;•&nbsp; No data sales
+            <p className="micro-trust" style={{ fontSize: "11px", color: "var(--muted)", margin: 0 }}>
+              <ShieldCheck size={13} /> Authenticated access · no browser data storage
             </p>
           </div>
 
@@ -69,13 +70,17 @@ export function Footer() {
             <p style={{ fontSize: "11px", textTransform: "uppercase", letterSpacing: "2px", color: "var(--muted)", marginBottom: "16px" }}>
               Legal
             </p>
-            {["Privacy Policy", "Terms of Service", "Cookie Policy"].map((l) => (
-              <span key={l} style={{
+            {[
+              { label: "Privacy Policy", href: "/privacy" },
+              { label: "Terms of Service", href: "/terms" },
+              { label: "Safety", href: "/safety" },
+            ].map((l) => (
+              <Link key={l.href} href={l.href} style={{
                 display: "block", fontSize: "13px", color: "var(--muted)",
-                marginBottom: "10px", cursor: "pointer",
+                marginBottom: "10px", textDecoration: "none",
               }}>
-                {l}
-              </span>
+                {l.label}
+              </Link>
             ))}
           </div>
         </div>
@@ -90,8 +95,8 @@ export function Footer() {
           <p style={{ fontSize: "11px", color: "var(--muted)", margin: 0, letterSpacing: "1px" }}>
             © 2026 Solum · Built for connection
           </p>
-          <p style={{ fontSize: "11px", color: "var(--muted)", margin: 0 }}>
-            ⚠️ Not a substitute for professional mental health care.
+          <p className="micro-trust" style={{ fontSize: "11px", color: "var(--muted)", margin: 0 }}>
+            <TriangleAlert size={13} /> AI companion—not a crisis or mental-health service.
           </p>
         </div>
       </div>

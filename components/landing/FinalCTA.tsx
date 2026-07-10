@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Brain, ShieldCheck, Trash2 } from "lucide-react";
 
 export function FinalCTA() {
   return (
@@ -53,9 +54,11 @@ export function FinalCTA() {
         </div>
 
         {/* Trust microcopy */}
-        <p style={{ fontSize: "12px", color: "var(--muted)" }}>
-          🔒 Private by default &nbsp;•&nbsp; 🗑️ Delete memories anytime &nbsp;•&nbsp; 💚 No judgment
-        </p>
+        <div style={{ fontSize: "12px", color: "var(--muted)", display: "flex", justifyContent: "center", gap: "16px", flexWrap: "wrap" }}>
+          <span className="micro-trust"><ShieldCheck size={13} /> Authenticated access</span>
+          <span className="micro-trust"><Trash2 size={13} /> Delete memories</span>
+          <span className="micro-trust"><Brain size={13} /> No browser storage</span>
+        </div>
       </div>
     </section>
   );

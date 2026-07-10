@@ -1,126 +1,103 @@
-# 🌿 Solum
+# Solum
 
-Live : https://solum-olive.vercel.app/ 
+[Live product](https://solum-olive.vercel.app/) · [Safety](https://solum-olive.vercel.app/safety) · [Privacy](https://solum-olive.vercel.app/privacy)
 
-An AI Companion That Grows With You
+Solum is a voice-first AI companion platform. Authenticated users choose a companion, speak through ElevenLabs Conversational AI, and control the memories that carry into later calls. Supabase owns authentication and persistent data; Twilio supports optional phone and SMS flows; Vercel hosts the Next.js application.
 
-Solum is an AI-powered conversational companion designed to provide meaningful, engaging, and emotionally aware conversations. Built with Next.js, Supabase, and AI APIs, Solum shares stories, remembers yours, and evolves over time.
+## What is real
 
-## ✨ Features
+- Supabase authentication, profiles, companion assignments, conversations, and memories
+- Database-driven public companion catalog—no duplicated catalog in the frontend
+- ElevenLabs browser voice sessions with per-companion configuration
+- Review, delete, and JSON export controls for saved memories
+- Persisted profile and per-companion voice settings
+- Twilio enrollment, inbound SMS, and phone personalization endpoints
+- Signed ElevenLabs and Twilio webhooks, protected machine-to-machine routes, and row-level security
+- Privacy, Terms, Safety, reduced-motion, responsive layouts, and a health endpoint
+- No product data in `localStorage` or `sessionStorage`
 
-💬 Real-time AI conversation
+Solum is an AI product, not a human, crisis service, or substitute for professional care.
 
-🧠 Memory-based interaction (remembers user context)
+## Architecture
 
-🔊 Voice-ready architecture (supports ElevenLabs integration)
+```text
+Browser ── Supabase Auth ── Next.js route handlers ── Supabase Postgres
+   │                                │
+   └── ElevenLabs voice session ────┤── signed post-call webhook
+                                    └── Twilio SMS / phone webhooks
+```
 
-🔐 Authentication with Supabase
+Server-only provider keys never use the `NEXT_PUBLIC_` prefix. Supabase row-level security restricts user-owned records, while service-role access is limited to verified provider and internal enrollment routes.
 
-🌱 Emotionally intelligent companion design
+## Local setup
 
-📱 Modern responsive UI (Next.js + React)
+Requirements: Node.js 20+, npm, a Supabase project, and an ElevenLabs Conversational AI account. Twilio is optional unless phone/SMS flows are enabled.
 
-
-## 🏗 Tech Stack
-
-Frontend: Next.js (App Router), React, TypeScript
-
-Backend / DB: Supabase
-
-AI Integration: LLM API (OpenAI-compatible)
-
-Voice (Optional): ElevenLabs
-
-Deployment: Vercel
-
-## 🚀 Getting Started
-### 1️⃣ Clone the Repository
 ```bash
-git clone https://github.com/shreyamahajan5/Solum.git
+git clone https://github.com/taranggoyal70/Solum.git
 cd Solum
+npm ci
+cp .env.example .env.local
 ```
-### 2️⃣ Install Dependencies
-```bash
-npm install
-```
-### 3️⃣ Setup Environment Variables
 
-#### Create a .env.local file in the root directory:
-```bash
-NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+Fill every variable needed for the flows you enable. Generate independent machine secrets with `openssl rand -hex 32`; do not reuse provider keys.
 
-OPENAI_API_KEY=your_openai_key
-ELEVENLABS_API_KEY=your_elevenlabs_key
-ELEVENLABS_AGENT_ID=your_agent_id
-```
-If you're using ElevenLabs Conversational AI, you can find your Agent ID in the ElevenLabs dashboard under Conversational AI → Agents.
+Apply the database migrations in order with the Supabase CLI:
 
-## 4️⃣ Run the Development Server
 ```bash
+supabase link --project-ref YOUR_PROJECT_REF
+supabase db push
 npm run dev
 ```
-## Visit:
 
-http://localhost:3000
+Open [http://localhost:3000](http://localhost:3000). The health check is available at `/api/health`.
 
-### 🧠 How Solum Works
+## Required production configuration
 
-User logs in via Supabase authentication
+| Variable | Visibility | Purpose |
+| --- | --- | --- |
+| `NEXT_PUBLIC_APP_URL` | Browser-safe | Canonical HTTPS origin |
+| `NEXT_PUBLIC_SUPABASE_URL` | Browser-safe | Supabase project URL |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Browser-safe | RLS-protected Supabase anon key |
+| `SUPABASE_SERVICE_ROLE_KEY` | Server only | Verified webhook and enrollment operations |
+| `ELEVENLABS_API_KEY` | Server only | Agent administration scripts |
+| `ELEVENLABS_WEBHOOK_SECRET` | Server only | Post-call signature verification |
+| `TWILIO_ACCOUNT_SID` | Server only | Twilio API access |
+| `TWILIO_AUTH_TOKEN` | Server only | Twilio API access and request validation |
+| `TWILIO_PHONE_NUMBER` | Server only | SMS sender |
+| `ENROLLMENT_API_SECRET` | Server only | Internal enrollment endpoint bearer secret |
+| `TWILIO_PERSONALIZATION_SECRET` | Server only | ElevenLabs phone-personalization bearer secret |
 
-Messages are sent to an AI backend
+Configure ElevenLabs post-call events to either `/api/webhook/post-call` or the backward-compatible `/api/webhook/elevenlabs` alias. Configure the personalization integration with `Authorization: Bearer <TWILIO_PERSONALIZATION_SECRET>`.
 
-The AI generates contextual responses
+## Quality gates
 
-Conversation memory is stored in Supabase
+```bash
+npm run lint
+npm run test
+npm run build
+npm audit
+```
 
-(Optional) Responses are converted to speech using ElevenLabs
+The deployment should not proceed unless all four commands pass. After deployment, verify `/api/health`, signup/login redirects, the companion catalog, an authenticated call, post-call memory creation, settings persistence, memory export/deletion, and the provider signature rejection paths.
 
-## 📁 Project Structure
-app/              → Routes & pages (Next.js App Router)
-components/       → Reusable UI components
-hooks/            → Custom React hooks
-lib/              → API utilities & helpers
-supabase/         → Database configuration
-public/           → Static assets
-🔊 ElevenLabs Voice Integration (Optional)
+## Vercel deployment
 
-## To enable voice responses:
+1. Import this repository into Vercel.
+2. Add the production variables above to the project.
+3. Set `NEXT_PUBLIC_APP_URL` to the final HTTPS domain.
+4. Apply Supabase migrations before promoting the deployment.
+5. Update ElevenLabs and Twilio webhook URLs to the production domain.
+6. Run the quality gates and the live smoke test checklist.
 
-Create an Agent in ElevenLabs
+## Data and safety notes
 
-Copy the Agent ID
+- Conversation transcripts and extracted memories may contain sensitive personal information.
+- Keep service-role and provider credentials server-only and rotate them if exposed.
+- Do not disable webhook verification in production.
+- Users can export and delete memories in the dashboard; account-level deletion should be handled through the product support channel until a self-serve deletion flow is added.
+- Terms and policies in this repository are product copy, not legal advice; have counsel review them before broad commercial launch.
 
-Add it to .env.local
+## License
 
-Ensure Conversational AI is enabled in your ElevenLabs plan
-
-## 🌎 Deployment
-
-Solum is optimized for deployment on Vercel:
-
-vercel
-Link : https://devpost.com/software/solume?ref_content=my-projects-tab&ref_feature=my_projects
-
-
-Make sure all environment variables are added in the Vercel dashboard.
- 
-## 🎯 Vision
-
-Solum isn’t just a chatbot.
-It’s designed to be:
-
-A companion for the elderly
-
-A memory-preserving conversational partner
-
-A calm, emotionally aware AI presence
-
-
-## 🤝 Contributing
-
-Pull requests are welcome. For major changes, please open an issue first to discuss what you'd like to change.
-
-### 📄 License
-
-MIT License
+MIT

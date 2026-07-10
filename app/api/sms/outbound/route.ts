@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/server";
 import { sendSMS } from "@/lib/twilio/client";
+import { hasBearerSecret } from "@/lib/security/webhooks";
 
 interface EnrollPayload {
   full_name: string;
@@ -29,12 +30,16 @@ Reply STOP at any time to opt out.`;
 
 export async function POST(req: NextRequest) {
   try {
+    if (!hasBearerSecret(req, process.env.ENROLLMENT_API_SECRET)) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const body: EnrollPayload = await req.json();
     const { full_name, phone, age, gender, dob, message } = body;
 
-    if (!full_name || !phone) {
+    if (!full_name?.trim() || !/^\+[1-9]\d{7,14}$/.test(phone ?? "")) {
       return NextResponse.json(
-        { error: "full_name and phone are required" },
+        { error: "A name and E.164 phone number are required" },
         { status: 400 }
       );
     }
@@ -93,18 +98,16 @@ export async function POST(req: NextRequest) {
     const welcomeMessage = buildWelcomeMessage(full_name, message);
     await sendSMS(sanitizedPhone, welcomeMessage);
 
-    console.log(`Enrolled and SMS sent to ${full_name} at ${sanitizedPhone}`);
-
     return NextResponse.json({
       success: true,
       userId: authData.user.id,
-      message: `Welcome SMS sent to ${sanitizedPhone}`,
+      message: "Enrollment created and welcome SMS sent",
     });
 
   } catch (err) {
     console.error("Outbound SMS error:", err);
     return NextResponse.json(
-      { error: err instanceof Error ? err.message : "Internal server error" },
+      { error: "Unable to complete enrollment" },
       { status: 500 }
     );
   }

@@ -1,13 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { UUID_PATTERN } from "@/lib/validation";
 
 export async function POST(req: NextRequest) {
   try {
     const { conversationRecordId, elevenlabsConversationId } = await req.json();
 
-    if (!conversationRecordId || !elevenlabsConversationId) {
+    if (
+      typeof conversationRecordId !== "string" ||
+      !UUID_PATTERN.test(conversationRecordId) ||
+      typeof elevenlabsConversationId !== "string" ||
+      !/^[A-Za-z0-9_-]{8,128}$/.test(elevenlabsConversationId)
+    ) {
       return NextResponse.json(
-        { error: "conversationRecordId and elevenlabsConversationId are required" },
+        { error: "Valid conversation identifiers are required" },
         { status: 400 }
       );
     }
@@ -34,10 +40,9 @@ export async function POST(req: NextRequest) {
     }
 
     return NextResponse.json({ success: true });
-  } catch (err) {
-    console.error("Error linking conversation:", err);
+  } catch {
     return NextResponse.json(
-      { error: err instanceof Error ? err.message : "Internal server error" },
+      { error: "Unable to link the conversation" },
       { status: 500 }
     );
   }

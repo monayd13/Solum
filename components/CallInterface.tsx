@@ -3,7 +3,7 @@
 import { useCall } from "@/hooks/useCall";
 import { WaveformVisualizer } from "@/components/WaveformVisualizer";
 import { UserAgent } from "@/types";
-import { Phone, PhoneOff, ArrowLeft, Mic, MicOff } from "lucide-react";
+import { Phone, PhoneOff, ArrowLeft, Mic, MicOff, UserRound } from "lucide-react";
 import Link from "next/link";
 
 interface CallInterfaceProps {
@@ -16,7 +16,7 @@ export function CallInterface({ agent }: CallInterfaceProps) {
 
   const template = agent.template;
   const name = agent.custom_name || template?.name || "Unknown";
-  const emoji = template?.avatar_emoji || "🤖";
+  const initials = name.split(/\s+/).slice(0, 2).map((part) => part[0]).join("");
   const accentColor = template?.accent_color || "var(--amber)";
   const tagline = template?.tagline || "";
 
@@ -85,7 +85,7 @@ export function CallInterface({ agent }: CallInterfaceProps) {
                   : "none",
             }}
           >
-            {emoji}
+            <UserRound size={30} /><span className="text-lg font-semibold">{initials}</span>
           </div>
         </div>
 

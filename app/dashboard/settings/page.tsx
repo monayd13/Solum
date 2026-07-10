@@ -4,18 +4,8 @@ import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { UserProfile, UserAgent, VoiceSettings, Memory } from "@/types";
-import { ArrowLeft, Save, Check, RotateCcw, Trash2, Brain, AlertTriangle } from "lucide-react";
+import { ArrowLeft, Save, Check, RotateCcw, Trash2, Brain, AlertTriangle, UserRound } from "lucide-react";
 import Link from "next/link";
-
-function getAge(dobStr: string): number | null {
-  if (!dobStr) return null;
-  const today = new Date();
-  const birth = new Date(dobStr);
-  let age = today.getFullYear() - birth.getFullYear();
-  const m = today.getMonth() - birth.getMonth();
-  if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) age--;
-  return age;
-}
 
 const DEFAULT_VOICE: VoiceSettings = { speed: 1.0, stability: 0.5, similarityBoost: 0.75 };
 
@@ -50,10 +40,6 @@ export default function SettingsPage() {
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
   const [deleting, setDeleting] = useState<string | null>(null);
   const [totalMemoryCount, setTotalMemoryCount] = useState(0);
-
-  useEffect(() => {
-    loadData();
-  }, []);
 
   async function loadData() {
     const supabase = createClient();
@@ -112,7 +98,7 @@ export default function SettingsPage() {
         return {
           agentId: a.id,
           name: a.custom_name || t?.name || "Agent",
-          emoji: t?.avatar_emoji || "🤖",
+          emoji: (a.custom_name || t?.name || "Agent").split(/\s+/).slice(0, 2).map((part) => part[0]).join(""),
           color: t?.accent_color || "var(--amber)",
           count: mems.length,
           memories: mems,
@@ -124,6 +110,10 @@ export default function SettingsPage() {
 
     setLoading(false);
   }
+
+  // Client-side Supabase auth requires loading after hydration.
+  // eslint-disable-next-line react-hooks/set-state-in-effect
+  useEffect(() => { void loadData(); }, []);
 
   async function handleSave(e: React.FormEvent) {
     e.preventDefault();
@@ -194,6 +184,8 @@ export default function SettingsPage() {
     if (!res.ok) {
       const data = await res.json();
       setError(data.error || "Failed to save voice settings");
+      setAgentVoices((prev) => prev.map((a, i) => (i === index ? { ...a, saving: false } : a)));
+      return;
     }
 
     setAgentVoices((prev) =>
@@ -351,6 +343,25 @@ export default function SettingsPage() {
             </div>
           )}
 
+          <form onSubmit={handleSave} style={{ background: "var(--surface)", border: "1px solid var(--border2)", borderRadius: "16px", padding: "24px", marginBottom: "28px" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "16px", marginBottom: "20px", flexWrap: "wrap" }}>
+              <div>
+                <p style={{ ...labelStyle, color: "var(--amber)" }}>Profile</p>
+                <h2 style={{ fontFamily: "var(--font-cormorant)", fontSize: "25px", fontWeight: 300, margin: 0 }}>Your account details</h2>
+                <p style={{ fontSize: "12px", color: "var(--muted)", marginTop: "5px" }}>Saved securely to your Supabase profile.</p>
+              </div>
+              <button type="submit" disabled={saving || !hasChanges} style={{ padding: "9px 14px", borderRadius: "8px", border: "none", background: saved ? "var(--green)" : hasChanges ? "var(--amber)" : "var(--surface2)", color: saved || hasChanges ? "var(--bg)" : "var(--muted)", cursor: hasChanges ? "pointer" : "not-allowed", display: "flex", alignItems: "center", gap: "6px", fontFamily: "inherit", fontWeight: 600 }}>
+                {saving ? "Saving…" : saved ? <><Check size={13} /> Saved</> : <><Save size={13} /> Save profile</>}
+              </button>
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(190px, 1fr))", gap: "14px" }}>
+              <label><span style={labelStyle}>Full name</span><input value={fullName} maxLength={100} required onChange={(event) => setFullName(event.target.value)} style={inputStyle} /></label>
+              <label><span style={labelStyle}>Phone</span><input type="tel" value={phone} placeholder="+15551234567" onChange={(event) => setPhone(event.target.value)} style={inputStyle} /></label>
+              <label><span style={labelStyle}>Date of birth</span><input type="date" value={dob} required onChange={(event) => setDob(event.target.value)} style={{ ...inputStyle, colorScheme: "dark" }} /></label>
+              <label><span style={labelStyle}>Gender</span><select value={gender} onChange={(event) => setGender(event.target.value)} style={inputStyle}><option value="">Prefer not to say</option><option value="female">Female</option><option value="male">Male</option><option value="non-binary">Non-binary</option><option value="other">Other</option></select></label>
+            </div>
+          </form>
+
           <div style={{ display: "flex", gap: "24px", flexWrap: "wrap" }}>
           {/* Voice Settings per Agent */}
           {agentVoices.length > 0 && (
@@ -376,7 +387,7 @@ export default function SettingsPage() {
               {agentVoices.map((av, index) => {
                 const template = av.agent.template;
                 const name = av.agent.custom_name || template?.name || "Agent";
-                const emoji = template?.avatar_emoji || "🤖";
+                const emoji = name.split(/\s+/).slice(0, 2).map((part) => part[0]).join("");
                 const color = template?.accent_color || "var(--amber)";
 
                 return (
@@ -402,7 +413,7 @@ export default function SettingsPage() {
                         display: "flex", alignItems: "center", justifyContent: "center",
                         fontSize: "20px",
                       }}>
-                        {emoji}
+                        <UserRound size={17} /> <span style={{ fontSize: "12px", fontWeight: 700 }}>{emoji}</span>
                       </div>
                       <div>
                         <p style={{
@@ -636,7 +647,7 @@ export default function SettingsPage() {
                   justifyContent: "space-between",
                 }}>
                   <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                    <span style={{ fontSize: "20px" }}>{am.emoji}</span>
+                    <UserRound size={17} /><span style={{ fontSize: "12px", fontWeight: 700 }}>{am.emoji}</span>
                     <div>
                       <p style={{
                         fontFamily: "var(--font-cormorant)", fontSize: "16px",

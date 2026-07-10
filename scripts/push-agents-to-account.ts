@@ -14,7 +14,11 @@ if (!API_KEY) {
   process.exit(1);
 }
 
-const WEBHOOK_URL = process.env.WEBHOOK_URL || "https://solum-olive.vercel.app/api/webhook/post-call";
+const WEBHOOK_URL = process.env.WEBHOOK_URL;
+if (!WEBHOOK_URL) {
+  console.error("❌ Set WEBHOOK_URL env var");
+  process.exit(1);
+}
 const API_URL = "https://api.elevenlabs.io/v1/convai/agents/create";
 const PROMPTS_DIR = path.resolve(__dirname, "../personalities/voice-prompts");
 const BACKUP_PATH = path.resolve(__dirname, "../elevenlabs-agents-backup.json");

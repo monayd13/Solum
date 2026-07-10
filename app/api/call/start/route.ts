@@ -35,6 +35,9 @@ export async function POST(req: NextRequest) {
 
     const userAgent = agent as UserAgent;
     const template = userAgent.template!;
+    if (!template) {
+      return NextResponse.json({ error: "Companion configuration is unavailable" }, { status: 503 });
+    }
 
     // Fetch top memories for this user+agent
     const { data: memories } = await supabase
@@ -68,39 +71,32 @@ export async function POST(req: NextRequest) {
       customInstructions: userAgent.custom_instructions,
     });
 
-    // DEBUG: Log per-user context being sent to ElevenLabs
-    console.log("[CallStart] user:", user.id);
-    console.log("[CallStart] profile (raw):", JSON.stringify(profile));
-    console.log("[CallStart] agent:", agentId, "template:", template.name);
-    console.log("[CallStart] memoriesCount:", (memories ?? []).length);
-    console.log("[CallStart] memories:", JSON.stringify((memories ?? []).map((m: Memory) => m.content)));
-    console.log("[CallStart] conversationCount:", conversationCount);
-    console.log("[CallStart] dynamicVariables:", JSON.stringify(dynamicVariables, null, 2));
+    const elevenlabsAgentId = template.elevenlabs_agent_id;
+    if (!elevenlabsAgentId) {
+      return NextResponse.json({ error: "Voice service is not configured for this companion" }, { status: 503 });
+    }
 
-    // Create conversation record (ElevenLabs conversation ID linked later via /api/call/link)
+    // Create a record only after the selected companion is known to be callable.
     const { data: conversation } = await supabase
       .from("conversations")
-      .insert({
-        user_id: user.id,
-        agent_id: agentId,
-      })
-      .select()
+      .insert({ user_id: user.id, agent_id: agentId })
+      .select("id")
       .single();
 
-    // Use per-agent ElevenLabs ID, fall back to env var during migration
-    const elevenlabsAgentId =
-      template.elevenlabs_agent_id || process.env.NEXT_PUBLIC_ELEVENLABS_AGENT_ID || "";
+    if (!conversation?.id) {
+      return NextResponse.json({ error: "Unable to create a conversation" }, { status: 500 });
+    }
 
     return NextResponse.json({
-      conversationRecordId: conversation?.id,
+      conversationRecordId: conversation.id,
       elevenlabsAgentId,
       dynamicVariables,
       voiceSettings: userAgent.voice_settings,
     });
   } catch (err) {
-    console.error("Error starting call:", err);
+    console.error("Unable to start call", err instanceof Error ? err.name : "UnknownError");
     return NextResponse.json(
-      { error: err instanceof Error ? err.message : "Internal server error" },
+      { error: "Unable to start the call" },
       { status: 500 }
     );
   }
