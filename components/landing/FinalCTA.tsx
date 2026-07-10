@@ -3,7 +3,7 @@ import { Brain, ShieldCheck, Trash2 } from "lucide-react";
 
 export function FinalCTA() {
   return (
-    <section style={{ padding: "80px 40px 100px", background: "var(--surface)" }}>
+    <section className="final-cta-section" style={{ padding: "80px 40px 100px", background: "var(--surface)" }}>
       <div style={{ maxWidth: "800px", margin: "0 auto", textAlign: "center" }}>
         {/* Quote card */}
         <div style={{

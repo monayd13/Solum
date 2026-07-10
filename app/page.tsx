@@ -32,7 +32,7 @@ export default function LandingPage() {
     <div style={{ background: "var(--bg)", color: "var(--text)" }}>
 
       {/* ── NAV ── */}
-      <nav style={{
+      <nav className="landing-nav" style={{
         position: "fixed", top: 0, left: 0, right: 0, zIndex: 1000,
         background: "rgba(13,11,8,0.88)",
         backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)",
@@ -43,8 +43,8 @@ export default function LandingPage() {
         <span style={{ fontFamily: "var(--font-cormorant)", fontSize: "24px", fontWeight: 600, color: "var(--amber)", letterSpacing: "1px" }}>
           Solum
         </span>
-        <div style={{ display: "flex", alignItems: "center", gap: "32px" }}>
-          <Link href="/login" style={{ color: "var(--muted)", fontSize: "12px", letterSpacing: "1px", textTransform: "uppercase", textDecoration: "none", fontWeight: 500 }}>
+        <div className="landing-nav-actions" style={{ display: "flex", alignItems: "center", gap: "32px" }}>
+          <Link className="landing-nav-signin" href="/login" style={{ color: "var(--muted)", fontSize: "12px", letterSpacing: "1px", textTransform: "uppercase", textDecoration: "none", fontWeight: 500 }}>
             Sign In
           </Link>
           <Link href="/signup" style={{ padding: "8px 20px", background: "var(--amber)", color: "var(--bg)", borderRadius: "8px", fontSize: "12px", fontWeight: 600, textDecoration: "none" }}>
@@ -55,7 +55,7 @@ export default function LandingPage() {
       </nav>
 
       {/* ── HERO ── */}
-      <section style={{
+      <section className="landing-hero" style={{
         minHeight: "100vh", display: "flex", flexDirection: "column",
         alignItems: "center", justifyContent: "center",
         textAlign: "center", padding: "120px 40px 80px",
@@ -146,7 +146,7 @@ export default function LandingPage() {
       <HowItWorks />
 
       {/* ── FEATURES ── */}
-      <section style={{ maxWidth: "1200px", margin: "0 auto", padding: "80px 40px" }}>
+      <section className="section-shell" style={{ maxWidth: "1200px", margin: "0 auto" }}>
         <div style={{ textAlign: "center", marginBottom: "48px" }}>
           <p style={{ fontSize: "11px", textTransform: "uppercase", letterSpacing: "3px", color: "var(--amber)", marginBottom: "12px" }}>
             What makes it different
@@ -155,7 +155,7 @@ export default function LandingPage() {
             Built for real connection
           </h2>
         </div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "16px" }}>
+        <div className="three-column-grid">
           {FEATURES.map((f) => (
             <div key={f.title} className="reveal" style={{
               background: "var(--surface)", border: "1px solid var(--border2)",

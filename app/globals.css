@@ -156,6 +156,7 @@ body {
 .legal-content section { padding-top: 24px; border-top: 1px solid var(--border); }
 .legal-content h2 { font-size: 16px; margin-bottom: 10px; }
 .legal-content p { color: var(--muted); line-height: 1.8; }
+.footer-grid { grid-template-columns: 2fr 1fr 1fr 1fr; }
 
 @keyframes skeleton { to { background-position-x: -200%; } }
 
@@ -163,6 +164,18 @@ body {
   .section-shell { padding: 64px 20px; }
   .three-column-grid { grid-template-columns: 1fr; }
   .companion-grid { grid-template-columns: 1fr; }
+  .landing-nav { padding: 0 16px !important; }
+  .landing-nav-actions { gap: 8px !important; }
+  .landing-hero { padding: 104px 20px 64px !important; }
+  .footer-grid { grid-template-columns: 1fr 1fr; gap: 30px !important; }
+  .landing-footer { padding: 48px 20px 28px !important; }
+  .final-cta-section, .faq-section { padding: 64px 20px 72px !important; }
+  .final-cta-section > div > div:first-child { padding: 32px 22px !important; }
+}
+
+@media (max-width: 460px) {
+  .landing-nav-signin { display: none; }
+  .footer-grid { grid-template-columns: 1fr; }
 }
 
 @media (prefers-reduced-motion: reduce) {

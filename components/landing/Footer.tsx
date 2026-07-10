@@ -3,13 +3,13 @@ import { ShieldCheck, TriangleAlert } from "lucide-react";
 
 export function Footer() {
   return (
-    <footer style={{
+    <footer className="landing-footer" style={{
       borderTop: "1px solid var(--border)",
       background: "var(--bg)",
       padding: "48px 40px 32px",
     }}>
       <div style={{ maxWidth: "1100px", margin: "0 auto" }}>
-        <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1fr", gap: "48px", marginBottom: "48px" }}>
+        <div className="footer-grid" style={{ display: "grid", gap: "48px", marginBottom: "48px" }}>
           {/* Brand */}
           <div>
             <div style={{
