@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { MailCheck } from "lucide-react";
 
 function validatePassword(pw: string): string | null {
   if (pw.length < 8) return "At least 8 characters";
@@ -72,6 +73,7 @@ export default function SignupPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError]     = useState<string | null>(null);
   const [acceptedTerms, setAcceptedTerms] = useState(false);
+  const [accountCreated, setAccountCreated] = useState(false);
 
   function handleNext(e: React.FormEvent) {
     e.preventDefault();
@@ -113,27 +115,11 @@ export default function SignupPage() {
       return;
     }
 
-    if (data.user) {
-      const { error: profileError } = await supabase.from("profiles").upsert({
-        id: data.user.id,
-        full_name: fullName,
-        phone: normalizedPhone,
-        dob,
-        gender: gender || null,
-      });
-
-      if (profileError) {
-        setError("Account created but profile save failed. You can update your profile later.");
-        setLoading(false);
-        return;
-      }
-    }
-
     if (data.session) {
       router.push("/dashboard");
       router.refresh();
     } else {
-      setError("Check your email and click the confirmation link, then sign in.");
+      setAccountCreated(true);
       setLoading(false);
     }
   }
@@ -202,7 +188,7 @@ export default function SignupPage() {
         </div>
 
         {/* Step indicator */}
-        <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "24px" }}>
+        {!accountCreated && <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "24px" }}>
           {[1, 2].map((s) => (
             <div key={s} style={{ display: "flex", alignItems: "center", gap: "8px", flex: s < 2 ? 1 : "none" }}>
               <div style={{
@@ -225,7 +211,7 @@ export default function SignupPage() {
               {s < 2 && <div style={{ flex: 1, height: "1px", background: step > s ? "var(--amber)" : "var(--border2)", transition: "background 0.2s" }} />}
             </div>
           ))}
-        </div>
+        </div>}
 
         {/* Card */}
         <div style={{
@@ -238,8 +224,47 @@ export default function SignupPage() {
             background: "linear-gradient(90deg, var(--amber), transparent)",
           }} />
 
+          {accountCreated && (
+            <div style={{
+              display: "flex", flexDirection: "column", alignItems: "center",
+              textAlign: "center", padding: "12px 0 4px",
+            }}>
+              <div style={{
+                width: "56px", height: "56px", borderRadius: "50%",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                color: "var(--amber)", background: "rgba(212,136,10,0.1)",
+                border: "1px solid rgba(212,136,10,0.24)", marginBottom: "18px",
+              }}>
+                <MailCheck size={27} strokeWidth={1.8} aria-hidden="true" />
+              </div>
+              <h1 style={{
+                margin: 0, fontFamily: "var(--font-cormorant)",
+                fontSize: "30px", fontWeight: 600, color: "var(--text)",
+              }}>
+                Check your email
+              </h1>
+              <p style={{
+                margin: "10px 0 24px", maxWidth: "340px", fontSize: "14px",
+                lineHeight: 1.65, color: "var(--muted)", overflowWrap: "anywhere",
+              }}>
+                We created your account and saved your profile. Open the confirmation link sent to{" "}
+                <strong style={{ color: "var(--text)", fontWeight: 500 }}>
+                  {email.trim().toLowerCase()}
+                </strong>
+                , then sign in.
+              </p>
+              <Link href="/login" style={{
+                width: "100%", padding: "13px", borderRadius: "10px",
+                background: "var(--amber)", color: "var(--bg)",
+                textDecoration: "none", fontSize: "14px", fontWeight: 600,
+              }}>
+                Go to sign in
+              </Link>
+            </div>
+          )}
+
           {/* ── STEP 1 ── */}
-          {step === 1 && (
+          {!accountCreated && step === 1 && (
             <form onSubmit={handleNext} style={{ display: "flex", flexDirection: "column", gap: "18px" }}>
               <div style={{ display: "flex", gap: "12px" }}>
                 {field("First Name",
@@ -304,7 +329,7 @@ export default function SignupPage() {
           )}
 
           {/* ── STEP 2 ── */}
-          {step === 2 && (
+          {!accountCreated && step === 2 && (
             <form onSubmit={handleSignup} style={{ display: "flex", flexDirection: "column", gap: "18px" }}>
               {field("Email address",
                 <input type="email" required value={email} placeholder="you@example.com"
