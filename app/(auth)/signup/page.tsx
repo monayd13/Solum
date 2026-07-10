@@ -171,7 +171,7 @@ export default function SignupPage() {
     <div style={{
       minHeight: "100vh", background: "var(--bg)",
       display: "flex", alignItems: "center", justifyContent: "center",
-      padding: "40px 16px", position: "relative",
+      padding: "40px 16px", position: "relative", overflow: "hidden",
     }}>
       {/* Glow */}
       <div style={{
