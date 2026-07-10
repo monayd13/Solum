@@ -1,6 +1,6 @@
 # Solum
 
-[Live product](https://solum-olive.vercel.app/) · [Safety](https://solum-olive.vercel.app/safety) · [Privacy](https://solum-olive.vercel.app/privacy)
+[Live product](https://solum-phi.vercel.app/) · [Safety](https://solum-phi.vercel.app/safety) · [Privacy](https://solum-phi.vercel.app/privacy)
 
 Solum is a voice-first AI companion platform. Authenticated users choose a companion, speak through ElevenLabs Conversational AI, and control the memories that carry into later calls. Supabase owns authentication and persistent data; Twilio supports optional phone and SMS flows; Vercel hosts the Next.js application.
 

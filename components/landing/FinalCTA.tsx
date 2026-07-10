@@ -22,15 +22,12 @@ export function FinalCTA() {
             fontStyle: "italic", fontWeight: 300,
             lineHeight: 1.6, color: "var(--text)", margin: "0 0 20px",
           }}>
-            &ldquo;Every person has a story worth telling.{" "}
+            Every person has a story worth telling.{" "}
             <em style={{ color: "var(--amber)", fontStyle: "normal", fontWeight: 500 }}>
               Solum is here to listen.
             </em>
-            &rdquo;
           </p>
-          <p style={{ fontSize: "11px", letterSpacing: "3px", textTransform: "uppercase", color: "var(--muted)", margin: 0 }}>
-            — Daniel, The Steady Mentor
-          </p>
+          <p style={{ fontSize: "11px", letterSpacing: "3px", textTransform: "uppercase", color: "var(--muted)", margin: 0 }}>The Solum promise</p>
         </div>
 
         {/* CTAs */}

@@ -6,7 +6,7 @@ const controls = [
   { icon: Trash2, title: "Delete permanently", description: "Remove one memory, one companion's memories, or your complete memory history." },
   { icon: UserCheck, title: "Account isolation", description: "Database policies restrict profiles, calls, and memories to their owner." },
   { icon: KeyRound, title: "Protected integrations", description: "Twilio and ElevenLabs requests are verified before private data is accessed." },
-  { icon: ShieldCheck, title: "No browser storage", description: "Sensitive product data is persisted in Supabase—not localStorage or sessionStorage." },
+  { icon: ShieldCheck, title: "No browser storage", description: "Sensitive product data is persisted in Supabase—not in device-side browser storage." },
   { icon: LockKeyhole, title: "Private service keys", description: "Provider credentials stay on the server and never ship to the browser." },
 ];
 

@@ -31,19 +31,12 @@ export function Footer() {
             <p style={{ fontSize: "11px", textTransform: "uppercase", letterSpacing: "2px", color: "var(--muted)", marginBottom: "16px" }}>
               Companions
             </p>
-            {[
-              { name: "Maya Thompson",  color: "#c06800" },
-              { name: "Mateo Rivera",   color: "#0a6878" },
-              { name: "Claire Donovan", color: "#126838" },
-              { name: "Daniel Mercer",  color: "#5018a0" },
-            ].map((c) => (
-              <Link key={c.name} href="/signup" style={{
-                display: "block", fontSize: "13px", color: c.color,
-                textDecoration: "none", marginBottom: "10px",
-              }}>
-                {c.name}
-              </Link>
-            ))}
+            <a href="#companions" style={{ display: "block", fontSize: "13px", color: "var(--amber)", textDecoration: "none", marginBottom: "10px" }}>
+              Browse the live catalog
+            </a>
+            <Link href="/signup" style={{ display: "block", fontSize: "13px", color: "var(--muted)", textDecoration: "none", marginBottom: "10px" }}>
+              Choose after signup
+            </Link>
           </div>
 
           {/* Product */}
