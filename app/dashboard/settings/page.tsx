@@ -40,6 +40,8 @@ export default function SettingsPage() {
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
   const [deleting, setDeleting] = useState<string | null>(null);
   const [totalMemoryCount, setTotalMemoryCount] = useState(0);
+  const [confirmAccountDelete, setConfirmAccountDelete] = useState(false);
+  const [deletingAccount, setDeletingAccount] = useState(false);
 
   async function loadData() {
     const supabase = createClient();
@@ -251,6 +253,21 @@ export default function SettingsPage() {
       );
       setTotalMemoryCount((prev) => prev - 1);
     }
+  }
+
+  async function deleteAccount() {
+    setDeletingAccount(true);
+    setError(null);
+    const response = await fetch("/api/profile", { method: "DELETE" });
+    if (!response.ok) {
+      const data = await response.json();
+      setError(data.error || "Failed to delete account");
+      setDeletingAccount(false);
+      return;
+    }
+    const supabase = createClient();
+    await supabase.auth.signOut();
+    window.location.assign("/");
   }
 
   const hasChanges =
@@ -770,6 +787,24 @@ export default function SettingsPage() {
             </div>
           </div>
           </div>
+
+          <section style={{ marginTop: "28px", padding: "22px 24px", borderRadius: "16px", border: "1px solid var(--rose-m)", background: "var(--rose-l)" }}>
+            <p style={{ ...labelStyle, color: "var(--rose)" }}>Danger zone</p>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "18px", flexWrap: "wrap" }}>
+              <div style={{ maxWidth: "600px" }}>
+                <h2 style={{ fontSize: "16px", margin: "0 0 5px" }}>Permanently delete your account</h2>
+                <p style={{ fontSize: "12px", color: "var(--muted)", margin: 0 }}>Deletes your profile, companion assignments, conversations, transcripts, and memories. This cannot be undone.</p>
+              </div>
+              {confirmAccountDelete ? (
+                <div style={{ display: "flex", gap: "8px" }}>
+                  <button type="button" onClick={() => setConfirmAccountDelete(false)} disabled={deletingAccount} style={{ padding: "9px 12px", borderRadius: "8px", border: "1px solid var(--border2)", background: "transparent", color: "var(--muted)", fontFamily: "inherit", cursor: "pointer" }}>Cancel</button>
+                  <button type="button" onClick={deleteAccount} disabled={deletingAccount} style={{ padding: "9px 12px", borderRadius: "8px", border: "none", background: "var(--rose)", color: "var(--bg)", fontFamily: "inherit", fontWeight: 600, cursor: deletingAccount ? "not-allowed" : "pointer" }}>{deletingAccount ? "Deleting…" : "Yes, delete everything"}</button>
+                </div>
+              ) : (
+                <button type="button" onClick={() => setConfirmAccountDelete(true)} style={{ padding: "9px 12px", borderRadius: "8px", border: "1px solid var(--rose-m)", background: "transparent", color: "var(--rose)", fontFamily: "inherit", cursor: "pointer", display: "flex", alignItems: "center", gap: "6px" }}><Trash2 size={13} /> Delete account</button>
+              )}
+            </div>
+          </section>
           </>
         )}
       </div>

@@ -92,7 +92,12 @@ export async function POST(req: NextRequest) {
       })
       .eq("id", conversation.id);
 
-    if (memories.length > 0) {
+    const { count: existingMemories } = await supabase
+      .from("memories")
+      .select("id", { count: "exact", head: true })
+      .eq("conversation_id", conversation.id);
+
+    if (!existingMemories && memories.length > 0) {
       const memoryRows = memories.map((m) => ({
         user_id: conversation.user_id,
         agent_id: conversation.agent_id,

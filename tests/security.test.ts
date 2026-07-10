@@ -2,7 +2,7 @@ import crypto from "crypto";
 import { describe, expect, it } from "vitest";
 import { NextRequest } from "next/server";
 import { hasBearerSecret, verifyElevenLabsSignature } from "../lib/security/webhooks";
-import { isAdultDob, normalizeOptionalPhone, UUID_PATTERN } from "../lib/validation";
+import { isAdultDob, normalizeOptionalPhone, UUID_PATTERN, validateTranscript } from "../lib/validation";
 
 describe("webhook verification", () => {
   it("accepts a current valid ElevenLabs signature", () => {
@@ -45,5 +45,14 @@ describe("input validation", () => {
   it("recognizes canonical UUIDs", () => {
     expect(UUID_PATTERN.test("2d931510-d99f-494a-8c67-87feb05e1594")).toBe(true);
     expect(UUID_PATTERN.test("not-a-uuid")).toBe(false);
+  });
+
+  it("normalizes valid call transcripts and rejects unsafe payloads", () => {
+    expect(validateTranscript([{ role: "user", content: "  Hello there  " }, { role: "agent", content: "Hi" }])).toEqual([
+      { role: "user", content: "Hello there" },
+      { role: "assistant", content: "Hi" },
+    ]);
+    expect(validateTranscript([{ role: "system", content: "hidden" }])).toBeNull();
+    expect(validateTranscript([{ role: "user", content: "x".repeat(2_001) }])).toBeNull();
   });
 });

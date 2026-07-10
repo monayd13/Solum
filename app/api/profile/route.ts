@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createServiceClient } from "@/lib/supabase/server";
 import { isAdultDob, normalizeOptionalPhone, PROFILE_GENDERS } from "@/lib/validation";
 
 export async function GET() {
@@ -89,5 +89,21 @@ export async function PATCH(req: NextRequest) {
       { error: "Unable to update profile" },
       { status: 500 }
     );
+  }
+}
+
+export async function DELETE() {
+  try {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+    const serviceClient = await createServiceClient();
+    const { error } = await serviceClient.auth.admin.deleteUser(user.id);
+    if (error) throw error;
+
+    return NextResponse.json({ success: true });
+  } catch {
+    return NextResponse.json({ error: "Unable to delete the account" }, { status: 500 });
   }
 }

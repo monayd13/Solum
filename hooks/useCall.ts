@@ -15,6 +15,8 @@ export function useCall(agentId: string) {
   const conversationRef = useRef<Conversation | null>(null);
   const conversationRecordIdRef = useRef<string | null>(null);
   const animFrameRef = useRef<number | null>(null);
+  const transcriptRef = useRef<Array<{ role: "user" | "assistant"; content: string }>>([]);
+  const finalizedRef = useRef(false);
 
   // Poll audio levels from SDK while connected
   const startAudioLevelPolling = useCallback((conv: Conversation) => {
@@ -39,9 +41,29 @@ export function useCall(agentId: string) {
     setAudioLevel(0);
   }, []);
 
+  const finalizeConversation = useCallback(async () => {
+    if (finalizedRef.current || !conversationRecordIdRef.current) return;
+    finalizedRef.current = true;
+    try {
+      await fetch("/api/call/complete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          conversationRecordId: conversationRecordIdRef.current,
+          transcript: transcriptRef.current,
+        }),
+        keepalive: true,
+      });
+    } catch {
+      finalizedRef.current = false;
+    }
+  }, []);
+
   const connect = useCallback(async () => {
     setStatus("connecting");
     setError(null);
+    transcriptRef.current = [];
+    finalizedRef.current = false;
 
     try {
       // 1. Get system prompt + conversation record from backend
@@ -60,11 +82,12 @@ export function useCall(agentId: string) {
       conversationRecordIdRef.current = conversationRecordId;
 
       // 2. Start ElevenLabs conversation via SDK
-      const elAgentId = elevenlabsAgentId || process.env.NEXT_PUBLIC_ELEVENLABS_AGENT_ID!;
+      const elAgentId = elevenlabsAgentId;
 
       // Request microphone permission before starting session
       try {
-        await navigator.mediaDevices.getUserMedia({ audio: true });
+        const permissionStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        permissionStream.getTracks().forEach((track) => track.stop());
       } catch (micErr) {
         console.error("[ElevenLabs] Microphone permission denied:", micErr);
         throw new Error("Microphone access is required. Please allow microphone permission and try again.");
@@ -80,7 +103,7 @@ export function useCall(agentId: string) {
         const ttsOverrides: Record<string, number | string> = {};
         if (voiceSettings.speed != null && voiceSettings.speed !== 1) ttsOverrides.speed = voiceSettings.speed;
         if (voiceSettings.stability != null && voiceSettings.stability !== 0.5) ttsOverrides.stability = voiceSettings.stability;
-        if (voiceSettings.similarityBoost != null && voiceSettings.similarityBoost !== 0.75) ttsOverrides.similarity_boost = voiceSettings.similarityBoost;
+        if (voiceSettings.similarityBoost != null && voiceSettings.similarityBoost !== 0.75) ttsOverrides.similarityBoost = voiceSettings.similarityBoost;
 
         const agentOverrides: Record<string, string> = {};
         if (voiceSettings.language) agentOverrides.language = voiceSettings.language;
@@ -101,6 +124,7 @@ export function useCall(agentId: string) {
           setStatus("connected");
         },
         onDisconnect: () => {
+          void finalizeConversation();
           setStatus("idle");
           setIsSpeaking(false);
           stopAudioLevelPolling();
@@ -115,7 +139,10 @@ export function useCall(agentId: string) {
           setStatus("error");
           stopAudioLevelPolling();
         },
-        onMessage: () => {},
+        onMessage: (message: { role: "user" | "agent"; message: string }) => {
+          const content = message.message?.trim();
+          if (content) transcriptRef.current.push({ role: message.role === "agent" ? "assistant" : "user", content });
+        },
         onStatusChange: () => {},
       };
       if (overrides) {
@@ -148,7 +175,7 @@ export function useCall(agentId: string) {
       setError(err instanceof Error ? err.message : "Failed to connect");
       stopAudioLevelPolling();
     }
-  }, [agentId, startAudioLevelPolling, stopAudioLevelPolling]);
+  }, [agentId, finalizeConversation, startAudioLevelPolling, stopAudioLevelPolling]);
 
   const disconnect = useCallback(async () => {
     try {
@@ -156,11 +183,12 @@ export function useCall(agentId: string) {
     } catch {
       // already disconnected
     }
+    await finalizeConversation();
     conversationRef.current = null;
     stopAudioLevelPolling();
     setStatus("idle");
     setIsSpeaking(false);
-  }, [stopAudioLevelPolling]);
+  }, [finalizeConversation, stopAudioLevelPolling]);
 
   const toggleMute = useCallback(() => {
     if (conversationRef.current) {
@@ -174,9 +202,10 @@ export function useCall(agentId: string) {
   useEffect(() => {
     return () => {
       conversationRef.current?.endSession().catch(() => {});
+      void finalizeConversation();
       stopAudioLevelPolling();
     };
-  }, [stopAudioLevelPolling]);
+  }, [finalizeConversation, stopAudioLevelPolling]);
 
   return {
     status,

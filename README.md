@@ -10,6 +10,7 @@ Solum is a voice-first AI companion platform. Authenticated users choose a compa
 - Database-driven public companion catalog—no duplicated catalog in the frontend
 - ElevenLabs browser voice sessions with per-companion configuration
 - Review, delete, and JSON export controls for saved memories
+- Self-service permanent account and conversation-data deletion
 - Persisted profile and per-companion voice settings
 - Twilio enrollment, inbound SMS, and phone personalization endpoints
 - Signed ElevenLabs and Twilio webhooks, protected machine-to-machine routes, and row-level security
