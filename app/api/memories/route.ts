@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { UUID_PATTERN } from "@/lib/validation";
 
 export async function GET(req: NextRequest) {
   try {
@@ -21,6 +22,9 @@ export async function GET(req: NextRequest) {
       .order("created_at", { ascending: false });
 
     if (agentId) {
+      if (!UUID_PATTERN.test(agentId)) {
+        return NextResponse.json({ error: "Invalid agentId" }, { status: 400 });
+      }
       query = query.eq("agent_id", agentId);
     }
 
@@ -31,9 +35,9 @@ export async function GET(req: NextRequest) {
     }
 
     return NextResponse.json({ memories: data });
-  } catch (err) {
+  } catch {
     return NextResponse.json(
-      { error: err instanceof Error ? err.message : "Internal server error" },
+      { error: "Unable to load memories" },
       { status: 500 }
     );
   }
@@ -51,6 +55,9 @@ export async function DELETE(req: NextRequest) {
     const { memoryId, agentId, deleteAll } = await req.json();
 
     if (memoryId) {
+      if (typeof memoryId !== "string" || !UUID_PATTERN.test(memoryId)) {
+        return NextResponse.json({ error: "Invalid memoryId" }, { status: 400 });
+      }
       // Delete a single memory
       const { error } = await supabase
         .from("memories")
@@ -59,11 +66,13 @@ export async function DELETE(req: NextRequest) {
         .eq("user_id", user.id);
 
       if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-      console.log("[Memories] Deleted memory:", memoryId, "for user:", user.id);
       return NextResponse.json({ deleted: 1 });
     }
 
     if (agentId) {
+      if (typeof agentId !== "string" || !UUID_PATTERN.test(agentId)) {
+        return NextResponse.json({ error: "Invalid agentId" }, { status: 400 });
+      }
       // Delete all memories for a specific agent
       const { data, error } = await supabase
         .from("memories")
@@ -73,7 +82,6 @@ export async function DELETE(req: NextRequest) {
         .select("id");
 
       if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-      console.log("[Memories] Deleted", data?.length, "memories for agent:", agentId, "user:", user.id);
       return NextResponse.json({ deleted: data?.length ?? 0 });
     }
 
@@ -86,14 +94,13 @@ export async function DELETE(req: NextRequest) {
         .select("id");
 
       if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-      console.log("[Memories] Deleted ALL", data?.length, "memories for user:", user.id);
       return NextResponse.json({ deleted: data?.length ?? 0 });
     }
 
     return NextResponse.json({ error: "Provide memoryId, agentId, or deleteAll" }, { status: 400 });
-  } catch (err) {
+  } catch {
     return NextResponse.json(
-      { error: err instanceof Error ? err.message : "Internal server error" },
+      { error: "Unable to process memories" },
       { status: 500 }
     );
   }

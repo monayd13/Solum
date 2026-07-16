@@ -10,11 +10,12 @@ import { UserStories } from "@/components/landing/UserStories";
 import { FAQ } from "@/components/landing/FAQ";
 import { FinalCTA } from "@/components/landing/FinalCTA";
 import { Footer } from "@/components/landing/Footer";
+import { Brain, Mic2, ShieldCheck, Sparkles, Trash2 } from "lucide-react";
 
 const FEATURES = [
-  { icon: "🎙️", title: "Real Voice Conversations", color: "#d4880a", desc: "Low-latency voice AI that listens, responds, and feels like a real phone call." },
-  { icon: "🧠", title: "Persistent Memory",         color: "#2a9d8f", desc: "Every conversation is remembered. Your companion grows closer with each call." },
-  { icon: "✨", title: "Rich Personalities",         color: "#5a9e6a", desc: "Each companion has a deep backstory, distinct voice, and unique worldview." },
+  { icon: Mic2, title: "Real Voice Conversations", color: "#d4880a", desc: "Low-latency voice AI designed for natural back-and-forth conversation." },
+  { icon: Brain, title: "Persistent Memory", color: "#2a9d8f", desc: "Useful context can carry into the next call, with controls to review or delete it." },
+  { icon: Sparkles, title: "Distinct Personalities", color: "#5a9e6a", desc: "Choose from the live companion catalog, each with a different history, style, and language set." },
 ];
 
 export default function LandingPage() {
@@ -31,7 +32,7 @@ export default function LandingPage() {
     <div style={{ background: "var(--bg)", color: "var(--text)" }}>
 
       {/* ── NAV ── */}
-      <nav style={{
+      <nav className="landing-nav" style={{
         position: "fixed", top: 0, left: 0, right: 0, zIndex: 1000,
         background: "rgba(13,11,8,0.88)",
         backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)",
@@ -42,8 +43,8 @@ export default function LandingPage() {
         <span style={{ fontFamily: "var(--font-cormorant)", fontSize: "24px", fontWeight: 600, color: "var(--amber)", letterSpacing: "1px" }}>
           Solum
         </span>
-        <div style={{ display: "flex", alignItems: "center", gap: "32px" }}>
-          <Link href="/login" style={{ color: "var(--muted)", fontSize: "12px", letterSpacing: "1px", textTransform: "uppercase", textDecoration: "none", fontWeight: 500 }}>
+        <div className="landing-nav-actions" style={{ display: "flex", alignItems: "center", gap: "32px" }}>
+          <Link className="landing-nav-signin" href="/login" style={{ color: "var(--muted)", fontSize: "12px", letterSpacing: "1px", textTransform: "uppercase", textDecoration: "none", fontWeight: 500 }}>
             Sign In
           </Link>
           <Link href="/signup" style={{ padding: "8px 20px", background: "var(--amber)", color: "var(--bg)", borderRadius: "8px", fontSize: "12px", fontWeight: 600, textDecoration: "none" }}>
@@ -54,7 +55,7 @@ export default function LandingPage() {
       </nav>
 
       {/* ── HERO ── */}
-      <section style={{
+      <section className="landing-hero" style={{
         minHeight: "100vh", display: "flex", flexDirection: "column",
         alignItems: "center", justifyContent: "center",
         textAlign: "center", padding: "120px 40px 80px",
@@ -76,7 +77,7 @@ export default function LandingPage() {
           animation: "fadeUp 0.8s ease both",
         }}>
           <span style={{ width: "6px", height: "6px", borderRadius: "50%", background: "var(--amber)", animation: "pulse 2s infinite" }} />
-          AI Companion Platform · 2026
+          Voice companion platform
         </div>
 
         <h1 style={{
@@ -122,26 +123,11 @@ export default function LandingPage() {
           fontSize: "12px", color: "var(--muted)", flexWrap: "wrap", justifyContent: "center",
           animation: "fadeUp 0.8s 0.35s ease both",
         }}>
-          <span>🔒 Private by default</span>
+          <span className="micro-trust"><ShieldCheck size={13} /> Authenticated by default</span>
           <span style={{ opacity: 0.3 }}>•</span>
-          <span>🗑️ Delete memories anytime</span>
+          <span className="micro-trust"><Trash2 size={13} /> Delete memories anytime</span>
           <span style={{ opacity: 0.3 }}>•</span>
-          <span>💚 No judgment</span>
-        </div>
-
-        {/* Stats */}
-        <div style={{ display: "flex", gap: "48px", marginTop: "56px", flexWrap: "wrap", justifyContent: "center", animation: "fadeUp 0.8s 0.4s ease both" }}>
-          {[
-            { val: "4",    label: "Companions" },
-            { val: "2.4s", label: "Response Time" },
-            { val: "∞",    label: "Memory" },
-            { val: "0",    label: "Apps to Install" },
-          ].map(({ val, label }) => (
-            <div key={label} style={{ textAlign: "center" }}>
-              <div style={{ fontFamily: "var(--font-cormorant)", fontSize: "36px", fontWeight: 300, color: "var(--amber)", lineHeight: 1, marginBottom: "4px" }}>{val}</div>
-              <div style={{ fontSize: "11px", color: "var(--muted)", letterSpacing: "1px", textTransform: "uppercase" }}>{label}</div>
-            </div>
-          ))}
+          <span className="micro-trust"><Brain size={13} /> No browser storage</span>
         </div>
 
         <a href="#companions" style={{
@@ -160,7 +146,7 @@ export default function LandingPage() {
       <HowItWorks />
 
       {/* ── FEATURES ── */}
-      <section style={{ maxWidth: "1200px", margin: "0 auto", padding: "80px 40px" }}>
+      <section className="section-shell" style={{ maxWidth: "1200px", margin: "0 auto" }}>
         <div style={{ textAlign: "center", marginBottom: "48px" }}>
           <p style={{ fontSize: "11px", textTransform: "uppercase", letterSpacing: "3px", color: "var(--amber)", marginBottom: "12px" }}>
             What makes it different
@@ -169,7 +155,7 @@ export default function LandingPage() {
             Built for real connection
           </h2>
         </div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "16px" }}>
+        <div className="three-column-grid">
           {FEATURES.map((f) => (
             <div key={f.title} className="reveal" style={{
               background: "var(--surface)", border: "1px solid var(--border2)",
@@ -179,7 +165,7 @@ export default function LandingPage() {
               onMouseEnter={e => (e.currentTarget as HTMLElement).style.transform = "translateY(-4px)"}
               onMouseLeave={e => (e.currentTarget as HTMLElement).style.transform = "translateY(0)"}
             >
-              <span style={{ fontSize: "28px", marginBottom: "16px", display: "block" }}>{f.icon}</span>
+              <f.icon size={26} color={f.color} style={{ marginBottom: "16px" }} />
               <h3 style={{ fontSize: "16px", fontWeight: 600, marginBottom: "8px", color: "var(--text)" }}>{f.title}</h3>
               <p style={{ fontSize: "13px", color: "var(--muted)", lineHeight: "1.7" }}>{f.desc}</p>
             </div>

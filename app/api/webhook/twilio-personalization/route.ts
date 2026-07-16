@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/server";
 import { buildDynamicVariables } from "@/lib/agents/prompts";
 import { UserProfile, Memory, AgentTemplate } from "@/types";
+import { hasBearerSecret } from "@/lib/security/webhooks";
 
 /**
  * Twilio Personalization Webhook
@@ -22,18 +23,17 @@ function normalizePhone(phone: string): string {
 
 export async function POST(req: NextRequest) {
   try {
+    if (!hasBearerSecret(req, process.env.TWILIO_PERSONALIZATION_SECRET)) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const body = await req.json();
     const { caller_id, agent_id, called_number, call_sid } = body;
 
-    console.log("📞 Twilio personalization webhook:", {
-      caller_id,
-      agent_id,
-      called_number,
-      call_sid,
-    });
+    void called_number;
+    void call_sid;
 
     if (!caller_id) {
-      console.warn("⚠️ No caller_id — returning default");
       return NextResponse.json({
         type: "conversation_initiation_client_data",
         dynamic_variables: {
@@ -64,7 +64,6 @@ export async function POST(req: NextRequest) {
         .single();
 
       if (!profileAlt) {
-        console.log("👤 Unknown caller:", caller_id, "— returning default personalization");
         return NextResponse.json({
           type: "conversation_initiation_client_data",
           dynamic_variables: {
@@ -101,8 +100,6 @@ async function buildPersonalizedResponse(
   profile: UserProfile,
   elevenlabsAgentId: string
 ) {
-  console.log("👤 Found user:", profile.full_name, "(", profile.id, ")");
-
   // 2. Find the agent template matching the ElevenLabs agent_id
   const { data: template } = await supabase
     .from("agent_templates")
@@ -127,7 +124,6 @@ async function buildPersonalizedResponse(
       agentTemplate = userAgent.template as AgentTemplate;
     }
   } else {
-    console.log("⚠️ ElevenLabs agent not found in agent_templates — will use default_phone_agent_id if set");
   }
 
   // 4. Check if user has a preferred phone agent (override)
@@ -146,7 +142,6 @@ async function buildPersonalizedResponse(
 
     if (preferredAgent?.template) {
       const preferredTemplate = preferredAgent.template as AgentTemplate;
-      console.log("🔀 Overriding to preferred agent:", preferredTemplate.name);
 
       userAgentId = preferredAgent.id;
       agentTemplate = preferredTemplate;
@@ -208,14 +203,6 @@ async function buildPersonalizedResponse(
         first_message: `Hey ${(profile.full_name || "Friend").split(" ")[0]}! Nice to hear from you. What's on your mind?`,
       };
 
-  console.log("📤 Returning personalization:", {
-    user: profile.full_name,
-    agent: agentTemplate?.name,
-    memoriesCount: memories.length,
-    conversationCount,
-    hasOverride: !!overrideConfig,
-  });
-
   // 8. Create a conversation record for this phone call
   if (userAgentId) {
     const { data: conversation } = await supabase
@@ -228,7 +215,7 @@ async function buildPersonalizedResponse(
       .single();
 
     if (conversation) {
-      console.log("📝 Created conversation record:", conversation.id);
+      void conversation.id;
     }
   }
 

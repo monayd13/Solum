@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { UUID_PATTERN } from "@/lib/validation";
+
+const SUPPORTED_LANGUAGES = new Set(["en", "en-US", "en-GB", "es", "fr", "de", "it", "pt", "hi", "ja"]);
 
 export async function PATCH(req: NextRequest) {
   try {
@@ -12,8 +15,8 @@ export async function PATCH(req: NextRequest) {
 
     const { agentId, voiceSettings } = await req.json();
 
-    if (!agentId) {
-      return NextResponse.json({ error: "agentId is required" }, { status: 400 });
+    if (typeof agentId !== "string" || !UUID_PATTERN.test(agentId) || !voiceSettings || typeof voiceSettings !== "object") {
+      return NextResponse.json({ error: "A valid agent and voice settings are required" }, { status: 400 });
     }
 
     // Validate voice settings values
@@ -39,6 +42,9 @@ export async function PATCH(req: NextRequest) {
       }
       validated.similarityBoost = sim;
     }
+    if (voiceSettings.language && !SUPPORTED_LANGUAGES.has(voiceSettings.language)) {
+      return NextResponse.json({ error: "Unsupported language" }, { status: 400 });
+    }
     if (voiceSettings.language) {
       validated.language = voiceSettings.language;
     }
@@ -55,11 +61,10 @@ export async function PATCH(req: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    console.log("[VoiceSettings] Updated for agent:", agentId, validated);
     return NextResponse.json({ agent });
-  } catch (err) {
+  } catch {
     return NextResponse.json(
-      { error: err instanceof Error ? err.message : "Internal server error" },
+      { error: "Unable to update voice settings" },
       { status: 500 }
     );
   }

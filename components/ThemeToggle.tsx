@@ -1,20 +1,20 @@
 "use client";
 
-import { useTheme } from "next-themes";
 import { Sun, Moon } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 export function ThemeToggle() {
-  const { theme, setTheme } = useTheme();
-  const [mounted, setMounted] = useState(false);
+  const [theme, setTheme] = useState<"dark" | "light">("dark");
 
-  useEffect(() => setMounted(true), []);
-
-  if (!mounted) return <div className="w-9 h-9" />;
+  function toggleTheme() {
+    const nextTheme = theme === "dark" ? "light" : "dark";
+    document.documentElement.dataset.theme = nextTheme;
+    setTheme(nextTheme);
+  }
 
   return (
     <button
-      onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+      onClick={toggleTheme}
       className="w-9 h-9 rounded-full flex items-center justify-center transition-all duration-200 border"
       style={{
         background: "var(--surface2)",

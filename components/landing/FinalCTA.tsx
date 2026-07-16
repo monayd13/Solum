@@ -1,8 +1,9 @@
 import Link from "next/link";
+import { Brain, ShieldCheck, Trash2 } from "lucide-react";
 
 export function FinalCTA() {
   return (
-    <section style={{ padding: "80px 40px 100px", background: "var(--surface)" }}>
+    <section className="final-cta-section" style={{ padding: "80px 40px 100px", background: "var(--surface)" }}>
       <div style={{ maxWidth: "800px", margin: "0 auto", textAlign: "center" }}>
         {/* Quote card */}
         <div style={{
@@ -21,15 +22,12 @@ export function FinalCTA() {
             fontStyle: "italic", fontWeight: 300,
             lineHeight: 1.6, color: "var(--text)", margin: "0 0 20px",
           }}>
-            &ldquo;Every person has a story worth telling.{" "}
+            Every person has a story worth telling.{" "}
             <em style={{ color: "var(--amber)", fontStyle: "normal", fontWeight: 500 }}>
               Solum is here to listen.
             </em>
-            &rdquo;
           </p>
-          <p style={{ fontSize: "11px", letterSpacing: "3px", textTransform: "uppercase", color: "var(--muted)", margin: 0 }}>
-            — Daniel, The Steady Mentor
-          </p>
+          <p style={{ fontSize: "11px", letterSpacing: "3px", textTransform: "uppercase", color: "var(--muted)", margin: 0 }}>The Solum promise</p>
         </div>
 
         {/* CTAs */}
@@ -53,9 +51,11 @@ export function FinalCTA() {
         </div>
 
         {/* Trust microcopy */}
-        <p style={{ fontSize: "12px", color: "var(--muted)" }}>
-          🔒 Private by default &nbsp;•&nbsp; 🗑️ Delete memories anytime &nbsp;•&nbsp; 💚 No judgment
-        </p>
+        <div style={{ fontSize: "12px", color: "var(--muted)", display: "flex", justifyContent: "center", gap: "16px", flexWrap: "wrap" }}>
+          <span className="micro-trust"><ShieldCheck size={13} /> Authenticated access</span>
+          <span className="micro-trust"><Trash2 size={13} /> Delete memories</span>
+          <span className="micro-trust"><Brain size={13} /> No browser storage</span>
+        </div>
       </div>
     </section>
   );

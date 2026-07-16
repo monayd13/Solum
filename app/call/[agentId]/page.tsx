@@ -4,6 +4,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useAgent } from "@/hooks/useAgent";
 import { CallInterface } from "@/components/CallInterface";
 import { useEffect } from "react";
+import { CircleAlert } from "lucide-react";
 
 export default function CallPage() {
   const params = useParams();
@@ -42,7 +43,7 @@ export default function CallPage() {
         style={{ background: "var(--bg)" }}
       >
         <div className="text-center">
-          <p className="text-4xl mb-3">😕</p>
+          <CircleAlert size={36} color="var(--rose)" className="mx-auto mb-3" />
           <p style={{ color: "var(--muted)" }}>Agent not found.</p>
         </div>
       </div>

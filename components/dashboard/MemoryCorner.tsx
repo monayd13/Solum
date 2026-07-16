@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { Brain, Download, Settings2 } from "lucide-react";
+import Link from "next/link";
 
 interface Memory {
   id: string;
@@ -38,12 +40,7 @@ export function MemoryCorner() {
     setMemories((prev) => prev.filter((m) => m.id !== id));
   }
 
-  function timeAgo(dateStr: string) {
-    const diff = Date.now() - new Date(dateStr).getTime();
-    const days = Math.floor(diff / 86400000);
-    if (days === 0) return "today";
-    if (days === 1) return "yesterday";
-    if (days < 7) return `${days}d ago`;
+  function formatDate(dateStr: string) {
     return new Date(dateStr).toLocaleDateString("en-US", { month: "short", day: "numeric" });
   }
 
@@ -55,7 +52,7 @@ export function MemoryCorner() {
       {/* Header */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "18px" }}>
         <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-          <span style={{ fontSize: "18px" }}>🧠</span>
+          <Brain size={18} color="var(--amber)" />
           <h3 style={{ fontSize: "14px", fontWeight: 600, color: "var(--text)", margin: 0 }}>
             Memory Corner
           </h3>
@@ -76,7 +73,7 @@ export function MemoryCorner() {
         </div>
       ) : memories.length === 0 ? (
         <div style={{ textAlign: "center", padding: "24px 0" }}>
-          <p style={{ fontSize: "28px", marginBottom: "8px" }}>💭</p>
+          <Brain size={28} color="var(--muted2)" style={{ margin: "0 auto 8px" }} />
           <p style={{ fontSize: "13px", color: "var(--muted)", margin: "0 0 4px" }}>No memories yet</p>
           <p style={{ fontSize: "11px", color: "var(--muted)", margin: 0 }}>
             Start a conversation to build your memory
@@ -102,7 +99,7 @@ export function MemoryCorner() {
                 </p>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                   <span style={{ fontSize: "11px", color }}>
-                    via {name} · {timeAgo(m.created_at)}
+                    via {name} · {formatDate(m.created_at)}
                   </span>
                   <div className="mem-actions" style={{ opacity: 0, transition: "opacity 0.15s", display: "flex", gap: "10px" }}>
                     <button
@@ -121,22 +118,24 @@ export function MemoryCorner() {
 
       {/* Footer actions */}
       <div style={{ display: "flex", gap: "8px", marginTop: "16px", paddingTop: "14px", borderTop: "1px solid var(--border2)" }}>
-        <button style={{
+        <Link href="/dashboard/settings" style={{
           flex: 1, padding: "9px", borderRadius: "8px",
           background: "var(--surface2)", border: "1px solid var(--border2)",
           color: "var(--muted)", fontSize: "12px", cursor: "pointer",
-          fontFamily: "var(--font-dm-sans)",
+          fontFamily: "var(--font-dm-sans)", textDecoration: "none", textAlign: "center",
+          display: "flex", justifyContent: "center", alignItems: "center", gap: "6px",
         }}>
-          View All
-        </button>
-        <button style={{
+          <Settings2 size={13} /> Manage
+        </Link>
+        <a href="/api/memories/export" style={{
           flex: 1, padding: "9px", borderRadius: "8px",
           background: "var(--surface2)", border: "1px solid var(--border2)",
           color: "var(--muted)", fontSize: "12px", cursor: "pointer",
-          fontFamily: "var(--font-dm-sans)",
+          fontFamily: "var(--font-dm-sans)", textDecoration: "none", textAlign: "center",
+          display: "flex", justifyContent: "center", alignItems: "center", gap: "6px",
         }}>
-          Export
-        </button>
+          <Download size={13} /> Export
+        </a>
       </div>
     </div>
   );
