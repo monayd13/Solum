@@ -56,7 +56,7 @@ export default function LandingPage() {
 
       {/* ── HERO ── */}
       <section className="landing-hero" style={{
-        minHeight: "100vh", display: "flex", flexDirection: "column",
+        minHeight: "min(820px, 100svh)", display: "flex", flexDirection: "column",
         alignItems: "center", justifyContent: "center",
         textAlign: "center", padding: "120px 40px 80px",
         position: "relative", overflow: "hidden",
