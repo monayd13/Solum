@@ -14,7 +14,11 @@ export interface MatchResult {
   reason: string;
 }
 
-export function matchCompanionToNeed(need: UserNeed, mood?: UserMood): MatchResult {
+export function matchCompanionToNeed(
+  need: UserNeed,
+  mood?: UserMood,
+  hour?: number,
+): MatchResult {
   switch (need) {
     case "someone_to_listen":
       return {
@@ -45,7 +49,11 @@ export function matchCompanionToNeed(need: UserNeed, mood?: UserMood): MatchResu
 
     case "just_chat":
     default: {
-      const index = new Date().getHours() % 4;
+      // Rotate by hour of day for gentle variety; the hour is injectable so the
+      // pick is deterministic and testable rather than clock-dependent.
+      const currentHour = hour ?? new Date().getHours();
+      const count = ALL_COMPANIONS.length;
+      const index = ((currentHour % count) + count) % count;
       return {
         companion: ALL_COMPANIONS[index],
         reason: "Any companion would love to chat with you.",
