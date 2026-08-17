@@ -55,11 +55,15 @@ export function CompanionShowcase() {
         )}
 
         <div className="companion-grid">
-          {companions.map((companion) => {
+          {companions.map((companion, index) => {
             const color = companion.accent_color || "var(--amber)";
             const initials = companion.name.split(/\s+/).slice(0, 2).map((part) => part[0]).join("");
             return (
-              <article key={companion.id} className="companion-card reveal" style={{ borderTopColor: color }}>
+              <article
+                key={companion.id}
+                className="companion-card companion-card-enter"
+                style={{ borderTopColor: color, animationDelay: `${Math.min(index, 8) * 70}ms` }}
+              >
                 <div className="companion-avatar" style={{ color, borderColor: `${color}55`, background: `${color}16` }} aria-hidden="true">
                   <UserRound size={22} />
                   <span>{initials}</span>
