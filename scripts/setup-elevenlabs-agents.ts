@@ -70,7 +70,7 @@ async function createAgent(agent: AgentDef): Promise<{ name: string; agentId: st
       agent: {
         prompt: {
           prompt: prompt,
-          llm: "gemini-2.0-flash",
+          llm: "gemini-2.5-flash",
           temperature: 0.7,
         },
         first_message: "{{first_message}}",

@@ -1,12 +1,16 @@
 import { NextResponse } from "next/server";
+import { checkRuntimeReadiness } from "../../../lib/runtime/readiness";
 
 export async function GET() {
-  const configured = Boolean(
-    process.env.NEXT_PUBLIC_SUPABASE_URL &&
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-  );
+  const readiness = await checkRuntimeReadiness();
+  const ready = readiness.checks.supabase === "healthy";
+
   return NextResponse.json(
-    { status: configured ? "ok" : "degraded", version: process.env.VERCEL_GIT_COMMIT_SHA?.slice(0, 7) ?? "development" },
-    { status: configured ? 200 : 503, headers: { "Cache-Control": "no-store" } },
+    {
+      status: ready ? "ok" : "degraded",
+      version: process.env.VERCEL_GIT_COMMIT_SHA?.slice(0, 7) ?? "development",
+      checks: readiness.checks,
+    },
+    { status: ready ? 200 : 503, headers: { "Cache-Control": "no-store" } },
   );
 }

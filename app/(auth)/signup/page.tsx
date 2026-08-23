@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { MailCheck } from "lucide-react";
+import { getAuthCallbackUrl } from "@/lib/auth/redirect";
 
 function validatePassword(pw: string): string | null {
   if (pw.length < 8) return "At least 8 characters";
@@ -106,7 +107,10 @@ export default function SignupPage() {
     const { data, error: signUpError } = await supabase.auth.signUp({
       email: email.trim().toLowerCase(),
       password,
-      options: { data: { full_name: fullName, phone: normalizedPhone, dob, gender: gender || null, companion_id: companionId } },
+      options: {
+        emailRedirectTo: getAuthCallbackUrl(window.location.origin),
+        data: { full_name: fullName, phone: normalizedPhone, dob, gender: gender || null, companion_id: companionId },
+      },
     });
 
     if (signUpError) {

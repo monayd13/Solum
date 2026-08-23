@@ -35,7 +35,7 @@ Server-only provider keys never use the `NEXT_PUBLIC_` prefix. Supabase row-leve
 Requirements: Node.js 20+, npm, a Supabase project, and an ElevenLabs Conversational AI account. Twilio is optional unless phone/SMS flows are enabled.
 
 ```bash
-git clone https://github.com/taranggoyal70/Solum.git
+git clone https://github.com/monayd13/Solum.git
 cd Solum
 npm ci
 cp .env.example .env.local
